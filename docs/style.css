@@ -29,6 +29,30 @@
     --pre-bg: rgba(30, 41, 59, 0.03);
     --theme-toggle-bg: rgba(30, 41, 59, 0.05);
     
+    --badge-5-color: hsl(145, 80%, 23%);
+    --badge-5-bg: rgba(46, 125, 50, 0.08);
+    --badge-5-border: rgba(46, 125, 50, 0.2);
+    
+    --badge-4-color: hsl(175, 75%, 26%);
+    --badge-4-bg: rgba(0, 121, 107, 0.08);
+    --badge-4-border: rgba(0, 121, 107, 0.2);
+    
+    --badge-3-color: hsl(35, 95%, 28%);
+    --badge-3-bg: rgba(230, 81, 0, 0.08);
+    --badge-3-border: rgba(230, 81, 0, 0.2);
+    
+    --badge-2-color: hsl(20, 95%, 30%);
+    --badge-2-bg: rgba(216, 67, 21, 0.08);
+    --badge-2-border: rgba(216, 67, 21, 0.2);
+    
+    --badge-1-color: hsl(355, 85%, 33%);
+    --badge-1-bg: rgba(198, 40, 40, 0.08);
+    --badge-1-border: rgba(198, 40, 40, 0.2);
+    
+    --badge-0-color: #971e22;
+    --badge-0-bg: rgba(151, 30, 34, 0.08);
+    --badge-0-border: rgba(151, 30, 34, 0.2);
+    
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -56,6 +80,30 @@
     --formula-bg: rgba(0, 0, 0, 0.25);
     --pre-bg: hsl(222, 24%, 4%);
     --theme-toggle-bg: rgba(255, 255, 255, 0.05);
+    
+    --badge-5-color: hsl(145, 80%, 65%);
+    --badge-5-bg: rgba(145, 80%, 45%, 0.15);
+    --badge-5-border: rgba(145, 80%, 45%, 0.35);
+    
+    --badge-4-color: hsl(175, 75%, 65%);
+    --badge-4-bg: rgba(175, 75%, 45%, 0.15);
+    --badge-4-border: rgba(175, 75%, 45%, 0.35);
+    
+    --badge-3-color: hsl(35, 95%, 70%);
+    --badge-3-bg: rgba(35, 95%, 55%, 0.15);
+    --badge-3-border: rgba(35, 95%, 55%, 0.35);
+    
+    --badge-2-color: hsl(20, 95%, 70%);
+    --badge-2-bg: rgba(20, 95%, 55%, 0.15);
+    --badge-2-border: rgba(20, 95%, 55%, 0.35);
+    
+    --badge-1-color: hsl(355, 85%, 75%);
+    --badge-1-bg: rgba(355, 85%, 55%, 0.15);
+    --badge-1-border: rgba(355, 85%, 55%, 0.35);
+    
+    --badge-0-color: hsl(355, 50%, 75%);
+    --badge-0-bg: rgba(355, 50%, 50%, 0.12);
+    --badge-0-border: rgba(355, 50%, 50%, 0.25);
 }
 
 body {
@@ -698,12 +746,12 @@ th.sort-desc .sort-indicator::after {
     min-width: 32px;
 }
 
-.grade-5 { background-color: rgba(145, 80%, 45%, 0.2); color: hsl(145, 80%, 55%); border: 1px solid rgba(145, 80%, 45%, 0.4); }
-.grade-4 { background-color: rgba(175, 75%, 45%, 0.2); color: hsl(175, 75%, 55%); border: 1px solid rgba(175, 75%, 45%, 0.4); }
-.grade-3 { background-color: rgba(35, 95%, 55%, 0.2); color: hsl(35, 95%, 60%); border: 1px solid rgba(35, 95%, 55%, 0.4); }
-.grade-2 { background-color: rgba(20, 95%, 55%, 0.2); color: hsl(20, 95%, 60%); border: 1px solid rgba(20, 95%, 55%, 0.4); }
-.grade-1 { background-color: rgba(355, 85%, 55%, 0.2); color: hsl(355, 85%, 65%); border: 1px solid rgba(355, 85%, 55%, 0.4); }
-.grade-0 { background-color: rgba(355, 50%, 50%, 0.15); color: hsl(355, 50%, 65%); border: 1px solid rgba(355, 50%, 50%, 0.3); }
+.grade-5 { background-color: var(--badge-5-bg); color: var(--badge-5-color); border: 1px solid var(--badge-5-border); }
+.grade-4 { background-color: var(--badge-4-bg); color: var(--badge-4-color); border: 1px solid var(--badge-4-border); }
+.grade-3 { background-color: var(--badge-3-bg); color: var(--badge-3-color); border: 1px solid var(--badge-3-border); }
+.grade-2 { background-color: var(--badge-2-bg); color: var(--badge-2-color); border: 1px solid var(--badge-2-border); }
+.grade-1 { background-color: var(--badge-1-bg); color: var(--badge-1-color); border: 1px solid var(--badge-1-border); }
+.grade-0 { background-color: var(--badge-0-bg); color: var(--badge-0-color); border: 1px solid var(--badge-0-border); }
 
 /* Links inside Table */
 .github-url-link {

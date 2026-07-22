@@ -229,9 +229,9 @@ body {
 
 .nav-tab.active {
     color: var(--color-text);
-    background-color: #ffffff;
+    background-color: var(--bg-surface);
     border-color: var(--primary);
-    box-shadow: 0 4px 15px rgba(151, 30, 34, 0.1);
+    box-shadow: 0 4px 15px var(--primary-glow);
 }
 
 .tab-icon {

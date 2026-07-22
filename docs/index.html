@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div class="app-background">
@@ -21,14 +23,14 @@
         <!-- Header -->
         <header class="app-header">
             <div class="logo-container">
-                <span class="logo-icon">📊</span>
+                <span class="logo-icon"><i data-lucide="graduation-cap" class="logo-icon-svg"></i></span>
                 <div class="logo-text">
                     <h1>ITI Grade Processor</h1>
                     <p>Submissions Grading & Merging Tool</p>
                 </div>
             </div>
             <div class="header-badges">
-                <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light theme">🌙 Dark Mode</button>
+                <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light theme"><i data-lucide="moon" class="btn-icon"></i> Dark Mode</button>
                 <span class="badge badge-primary">GitHub Pages Ready</span>
                 <span class="badge badge-secondary" id="system-time">Cairo Time</span>
             </div>
@@ -37,13 +39,13 @@
         <!-- Navigation Tabs -->
         <nav class="app-nav">
             <button class="nav-tab active" id="tab-btn-grade" onclick="switchTab('grade')">
-                <span class="tab-icon">📝</span> Grade Problem
+                <i data-lucide="clipboard-check" class="tab-icon"></i> Grade Problem
             </button>
             <button class="nav-tab" id="tab-btn-merge" onclick="switchTab('merge')">
-                <span class="tab-icon">🔄</span> Merge Day Tasks
+                <i data-lucide="git-merge" class="tab-icon"></i> Merge Day Tasks
             </button>
             <button class="nav-tab" id="tab-btn-help" onclick="switchTab('help')">
-                <span class="tab-icon">💡</span> CLI & Hosting Guide
+                <i data-lucide="help-circle" class="tab-icon"></i> CLI & Hosting Guide
             </button>
         </nav>
 
@@ -60,16 +62,16 @@
                         <div class="dropzone" id="grade-dropzone">
                             <input type="file" id="grade-file-input" accept=".json" class="file-input">
                             <div class="dropzone-prompt">
-                                <span class="dropzone-icon">📥</span>
+                                <i data-lucide="upload-cloud" class="dropzone-icon"></i>
                                 <span class="dropzone-text">Drag & drop raw JSON or <strong>browse</strong></span>
                                 <span class="dropzone-sub">Accepts problem submissions JSON</span>
                             </div>
                         </div>
 
                         <div class="file-info-bar hidden" id="grade-file-info">
-                            <span class="file-icon">📄</span>
+                            <i data-lucide="file-code" class="file-icon"></i>
                             <span class="file-name" id="grade-uploaded-filename">filename.json</span>
-                            <button class="btn-icon-clear" onclick="clearGradeFile()">✕</button>
+                            <button class="btn-icon-clear" onclick="clearGradeFile()" aria-label="Clear file"><i data-lucide="x" class="btn-icon"></i></button>
                         </div>
 
                         <div class="settings-group">
@@ -97,16 +99,16 @@
                             <label for="grade-roster-input">Upload Roster (Optional)</label>
                             <div class="mini-upload">
                                 <input type="file" id="grade-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'grade')">
-                                <span class="mini-upload-btn" id="grade-roster-status">📂 Choose Roster File (CSV / TXT)</span>
+                                <span class="mini-upload-btn" id="grade-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>
                             </div>
                         </div>
 
                         <div class="action-buttons-stack">
                             <button class="btn btn-primary" id="btn-export-csv-grade" onclick="exportGraded('csv')" disabled>
-                                📥 Export CSV Sheet
+                                <i data-lucide="download" class="btn-icon"></i> Export CSV Sheet
                             </button>
                             <button class="btn btn-secondary" id="btn-export-json-grade" onclick="exportGraded('json')" disabled>
-                                📥 Export JSON Data
+                                <i data-lucide="file-json" class="btn-icon"></i> Export JSON Data
                             </button>
                         </div>
                     </div>
@@ -119,9 +121,9 @@
                                 <p id="graded-stats-summary" class="stats-text">Upload a file to see the statistics.</p>
                             </div>
                             <div class="search-bar">
-                                <span class="search-icon">🔍</span>
+                                <i data-lucide="search" class="search-icon"></i>
                                 <input type="text" id="grade-search" placeholder="Search by username or name..." oninput="filterGradeTable()">
-                                <button class="btn-search-clear hidden" id="grade-search-clear" onclick="clearSearch('grade')">✕</button>
+                                <button class="btn-search-clear hidden" id="grade-search-clear" onclick="clearSearch('grade')" aria-label="Clear search"><i data-lucide="x" class="btn-icon"></i></button>
                             </div>
                         </div>
 
@@ -149,7 +151,7 @@
                         <div class="distribution-chart-card hidden" id="grade-chart-card">
                             <div class="chart-header">
                                 <h3>Grade Distribution</h3>
-                                <button class="btn-clear-filter hidden" id="btn-clear-grade-filter" onclick="clearGradeFilter()">✕ Clear Filter</button>
+                                <button class="btn-clear-filter hidden" id="btn-clear-grade-filter" onclick="clearGradeFilter()"><i data-lucide="x" class="btn-icon"></i> Clear Filter</button>
                             </div>
                             <div class="chart-bars" id="grade-chart-bars">
                                 <!-- Generated Dynamically -->
@@ -192,7 +194,7 @@
                         <div class="dropzone" id="merge-dropzone">
                             <input type="file" id="merge-file-input" accept=".json" class="file-input" multiple>
                             <div class="dropzone-prompt">
-                                <span class="dropzone-icon">📂</span>
+                                <i data-lucide="upload-cloud" class="dropzone-icon"></i>
                                 <span class="dropzone-text">Drag & drop multiple files or <strong>browse</strong></span>
                                 <span class="dropzone-sub">Accepts ITI_problem_sheet.json files</span>
                             </div>
@@ -209,16 +211,16 @@
                             <label for="merge-roster-input">Upload Roster (Optional)</label>
                             <div class="mini-upload">
                                 <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
-                                <span class="mini-upload-btn" id="merge-roster-status">📂 Choose Roster File (CSV / TXT)</span>
+                                <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>
                             </div>
                         </div>
 
                         <div class="action-buttons-stack">
                             <button class="btn btn-primary" id="btn-export-csv-merge" onclick="exportMerged('csv')" disabled>
-                                🔄 Export Merged CSV
+                                <i data-lucide="git-merge" class="btn-icon"></i> Export Merged CSV
                             </button>
                             <button class="btn btn-secondary" id="btn-export-json-merge" onclick="exportMerged('json')" disabled>
-                                🔄 Export Merged JSON
+                                <i data-lucide="file-json" class="btn-icon"></i> Export Merged JSON
                             </button>
                         </div>
                     </div>
@@ -231,9 +233,9 @@
                                 <p id="merged-stats-summary" class="stats-text">Upload graded JSON sheets to merge.</p>
                             </div>
                             <div class="search-bar">
-                                <span class="search-icon">🔍</span>
+                                <i data-lucide="search" class="search-icon"></i>
                                 <input type="text" id="merge-search" placeholder="Search by username or name..." oninput="filterMergeTable()">
-                                <button class="btn-search-clear hidden" id="merge-search-clear" onclick="clearSearch('merge')">✕</button>
+                                <button class="btn-search-clear hidden" id="merge-search-clear" onclick="clearSearch('merge')" aria-label="Clear search"><i data-lucide="x" class="btn-icon"></i></button>
                             </div>
                         </div>
 

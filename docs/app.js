@@ -387,7 +387,7 @@ function renderGradeTable() {
             link.href = rec.github_url;
             link.target = "_blank";
             link.className = "github-url-link";
-            link.innerHTML = `${rec.timestamp} <span class="ext-link-icon">↗</span>`;
+            link.innerHTML = `${rec.timestamp} <i data-lucide="external-link" class="ext-link-icon"></i>`;
             tdTime.appendChild(link);
         } else {
             tdTime.innerText = rec.timestamp;
@@ -396,9 +396,9 @@ function renderGradeTable() {
             }
         }
         tr.appendChild(tdTime);
-        
         tbody.appendChild(tr);
     });
+    lucide.createIcons();
 }
 
 window.filterGradeTable = function() {
@@ -613,12 +613,14 @@ window.loadRosterFile = function(input, tab) {
         if (tab === 'grade') {
             studentRoster = roster;
             rosterFileName = file.name;
-            document.getElementById("grade-roster-status").innerText = `✅ Roster: ${file.name}`;
+            document.getElementById("grade-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
+            lucide.createIcons();
             recalculateGrade();
         } else {
             mergeRoster = roster;
             mergeRosterFileName = file.name;
-            document.getElementById("merge-roster-status").innerText = `✅ Roster: ${file.name}`;
+            document.getElementById("merge-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
+            lucide.createIcons();
             recalculateMerge();
         }
     };
@@ -738,13 +740,12 @@ function renderMergeFileList() {
         const item = document.createElement("div");
         item.className = "merge-file-item";
         
-        const nameSpan = document.createElement("span");
-        nameSpan.innerText = `📄 ${uploadedMergeSheets[key].problemName} (${key})`;
+        nameSpan.innerHTML = `<i data-lucide="file-code" class="file-icon"></i> ${uploadedMergeSheets[key].problemName} <span class="dimmed-filename">(${key})</span>`;
         item.appendChild(nameSpan);
         
         const delBtn = document.createElement("button");
         delBtn.className = "btn-file-delete";
-        delBtn.innerText = "✕";
+        delBtn.innerHTML = `<i data-lucide="x" class="btn-icon"></i>`;
         delBtn.onclick = (e) => {
             e.stopPropagation();
             delete uploadedMergeSheets[key];
@@ -755,6 +756,7 @@ function renderMergeFileList() {
         
         container.appendChild(item);
     });
+    lucide.createIcons();
 }
 
 function recalculateMerge() {
@@ -970,11 +972,12 @@ function initTheme() {
     
     if (savedTheme === "dark") {
         document.body.classList.add("dark-theme");
-        if (btn) btn.innerText = "☀️ Light Mode";
+        if (btn) btn.innerHTML = '<i data-lucide="sun" class="btn-icon"></i> Light Mode';
     } else {
         document.body.classList.remove("dark-theme");
-        if (btn) btn.innerText = "🌙 Dark Mode";
+        if (btn) btn.innerHTML = '<i data-lucide="moon" class="btn-icon"></i> Dark Mode';
     }
+    lucide.createIcons();
 }
 
 window.toggleTheme = function() {
@@ -982,11 +985,12 @@ window.toggleTheme = function() {
     if (document.body.classList.contains("dark-theme")) {
         document.body.classList.remove("dark-theme");
         localStorage.setItem("theme", "light");
-        if (btn) btn.innerText = "🌙 Dark Mode";
+        if (btn) btn.innerHTML = '<i data-lucide="moon" class="btn-icon"></i> Dark Mode';
     } else {
         document.body.classList.add("dark-theme");
         localStorage.setItem("theme", "dark");
-        if (btn) btn.innerText = "☀️ Light Mode";
+        if (btn) btn.innerHTML = '<i data-lucide="sun" class="btn-icon"></i> Light Mode';
     }
+    lucide.createIcons();
 };
 

@@ -1057,3 +1057,58 @@ tbody tr:hover td:first-child {
 tbody tr.row-absent:hover td:first-child {
     border-left-color: var(--danger);
 }
+
+/* Lucide SVGs styles */
+svg.logo-icon-svg {
+    width: 2rem;
+    height: 2rem;
+    stroke: var(--primary);
+    stroke-width: 2.2;
+    display: inline-block;
+    vertical-align: middle;
+}
+svg.tab-icon, svg.btn-icon, svg.file-icon, svg.search-icon, svg.ext-link-icon, svg.dropzone-icon {
+    display: inline-block;
+    vertical-align: middle;
+    stroke-width: 2.2;
+    fill: none;
+    stroke: currentColor;
+}
+svg.tab-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-right: 0.4rem;
+}
+svg.btn-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    margin-right: 0.3rem;
+}
+svg.file-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--primary);
+}
+svg.search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-text-muted);
+}
+svg.ext-link-icon {
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-left: 2px;
+    margin-bottom: 2px;
+    opacity: 0.75;
+}
+svg.dropzone-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+

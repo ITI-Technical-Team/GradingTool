@@ -1166,3 +1166,68 @@ svg.dropzone-icon {
     margin-bottom: 0.5rem;
 }
 
+/* Info Icon Tooltip */
+.info-tooltip-container {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 6px;
+    cursor: help;
+}
+
+.info-tooltip-container svg.info-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    color: var(--color-text-muted);
+    transition: var(--transition-smooth);
+    display: block;
+}
+
+.info-tooltip-container:hover svg.info-icon {
+    color: var(--primary);
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 280px;
+    background-color: var(--bg-surface);
+    color: var(--color-text);
+    text-align: left;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    position: absolute;
+    z-index: 100;
+    bottom: 130%; /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: normal;
+    font-weight: 400;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Tooltip Arrow */
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%; /* At the bottom of the tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--border-color) transparent transparent transparent;
+}
+
+.info-tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+

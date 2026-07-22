@@ -95,7 +95,17 @@
                         </div>
 
                         <div class="settings-group">
-                            <label for="grade-roster-input">Upload Roster (Optional)</label>
+                            <label for="grade-roster-input">
+                                Upload Roster (Optional)
+                                <span class="info-tooltip-container">
+                                    <i data-lucide="help-circle" class="info-icon"></i>
+                                    <span class="tooltip-text">
+                                        <strong>Roster File Formats:</strong><br>
+                                        • <strong>CSV</strong>: Header must include "username" or "github", and optionally "name".<br>
+                                        • <strong>TXT</strong>: Each line can be a github username, or username and name separated by a comma (e.g. <code>username, Real Name</code>).
+                                    </span>
+                                </span>
+                            </label>
                             <div class="mini-upload">
                                 <input type="file" id="grade-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'grade')">
                                 <span class="mini-upload-btn" id="grade-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>
@@ -207,7 +217,17 @@
                         </div>
 
                         <div class="settings-group">
-                            <label for="merge-roster-input">Upload Roster (Optional)</label>
+                            <label for="merge-roster-input">
+                                Upload Roster (Optional)
+                                <span class="info-tooltip-container">
+                                    <i data-lucide="help-circle" class="info-icon"></i>
+                                    <span class="tooltip-text">
+                                        <strong>Roster File Formats:</strong><br>
+                                        • <strong>CSV</strong>: Header must include "username" or "github", and optionally "name".<br>
+                                        • <strong>TXT</strong>: Each line can be a github username, or username and name separated by a comma (e.g. <code>username, Real Name</code>).
+                                    </span>
+                                </span>
+                            </label>
                             <div class="mini-upload">
                                 <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
                                 <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>

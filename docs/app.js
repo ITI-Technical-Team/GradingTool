@@ -740,6 +740,7 @@ function renderMergeFileList() {
         const item = document.createElement("div");
         item.className = "merge-file-item";
         
+        const nameSpan = document.createElement("span");
         nameSpan.innerHTML = `<i data-lucide="file-code" class="file-icon"></i> ${uploadedMergeSheets[key].problemName} <span class="dimmed-filename">(${key})</span>`;
         item.appendChild(nameSpan);
         

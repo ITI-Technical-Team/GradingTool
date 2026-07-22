@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add real-time clock update (Cairo time helper)
     updateSystemTime();
     setInterval(updateSystemTime, 60000);
+    
+    // Load saved theme preference
+    initTheme();
 });
 
 // System Time Helper
@@ -956,3 +959,34 @@ window.exportMerged = function(format) {
     
     triggerDownload(content, filename, mimeType);
 };
+
+// ----------------------------------------------------
+// THEME HANDLING (LIGHT / DARK TOGGLE)
+// ----------------------------------------------------
+
+function initTheme() {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    const btn = document.getElementById("theme-toggle");
+    
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        if (btn) btn.innerText = "☀️ Light Mode";
+    } else {
+        document.body.classList.remove("dark-theme");
+        if (btn) btn.innerText = "🌙 Dark Mode";
+    }
+}
+
+window.toggleTheme = function() {
+    const btn = document.getElementById("theme-toggle");
+    if (document.body.classList.contains("dark-theme")) {
+        document.body.classList.remove("dark-theme");
+        localStorage.setItem("theme", "light");
+        if (btn) btn.innerText = "🌙 Dark Mode";
+    } else {
+        document.body.classList.add("dark-theme");
+        localStorage.setItem("theme", "dark");
+        if (btn) btn.innerText = "☀️ Light Mode";
+    }
+};
+

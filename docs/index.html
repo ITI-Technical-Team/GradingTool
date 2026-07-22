@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITI Grade Processor - Student Grading & Merging Tool</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-background">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <span class="logo-icon">📊</span>
+                <div class="logo-text">
+                    <h1>ITI Grade Processor</h1>
+                    <p>Submissions Grading & Merging Tool</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-primary">GitHub Pages Ready</span>
+                <span class="badge badge-secondary" id="system-time">Cairo Time</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="app-nav">
+            <button class="nav-tab active" id="tab-btn-grade" onclick="switchTab('grade')">
+                <span class="tab-icon">📝</span> Grade Problem
+            </button>
+            <button class="nav-tab" id="tab-btn-merge" onclick="switchTab('merge')">
+                <span class="tab-icon">🔄</span> Merge Day Tasks
+            </button>
+            <button class="nav-tab" id="tab-btn-help" onclick="switchTab('help')">
+                <span class="tab-icon">💡</span> CLI & Hosting Guide
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- TAB 1: GRADE PROBLEM -->
+            <section id="tab-content-grade" class="tab-panel active">
+                <div class="grid-layout">
+                    <!-- Config & Upload Sidebar -->
+                    <div class="card glass-card sidebar-card">
+                        <h2>Upload & Configuration</h2>
+                        <p class="card-desc">Drag and drop your raw problem submissions JSON file below to start grading.</p>
+                        
+                        <div class="dropzone" id="grade-dropzone">
+                            <input type="file" id="grade-file-input" accept=".json" class="file-input">
+                            <div class="dropzone-prompt">
+                                <span class="dropzone-icon">📥</span>
+                                <span class="dropzone-text">Drag & drop raw JSON or <strong>browse</strong></span>
+                                <span class="dropzone-sub">Accepts problem submissions JSON</span>
+                            </div>
+                        </div>
+
+                        <div class="file-info-bar hidden" id="grade-file-info">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name" id="grade-uploaded-filename">filename.json</span>
+                            <button class="btn-icon-clear" onclick="clearGradeFile()">✕</button>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="grade-slug-select">Select Problem Slug</label>
+                            <select id="grade-slug-select" onchange="onGradeSlugChange()">
+                                <option value="">No file loaded</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="grade-deadline">Submission Deadline (Optional)</label>
+                            <input type="datetime-local" id="grade-deadline" onchange="recalculateGrade()">
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="grade-timezone">Timezone Offset</label>
+                            <select id="grade-timezone" onchange="recalculateGrade()">
+                                <option value="3" selected>UTC +3 (Cairo Summer Time / EEST)</option>
+                                <option value="2">UTC +2 (Cairo Standard Time / EET)</option>
+                                <option value="0">UTC +0 (GMT / UTC)</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="grade-roster-input">Upload Roster (Optional)</label>
+                            <div class="mini-upload">
+                                <input type="file" id="grade-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'grade')">
+                                <span class="mini-upload-btn" id="grade-roster-status">📂 Choose Roster File (CSV / TXT)</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons-stack">
+                            <button class="btn btn-primary" id="btn-export-csv-grade" onclick="exportGraded('csv')" disabled>
+                                📥 Export CSV Sheet
+                            </button>
+                            <button class="btn btn-secondary" id="btn-export-json-grade" onclick="exportGraded('json')" disabled>
+                                📥 Export JSON Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Graded Data View -->
+                    <div class="card glass-card data-card">
+                        <div class="data-header">
+                            <div class="data-title-section">
+                                <h2 id="graded-title">Graded Results</h2>
+                                <p id="graded-stats-summary" class="stats-text">Upload a file to see the statistics.</p>
+                            </div>
+                            <div class="search-bar">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" id="grade-search" placeholder="Search by username or name..." oninput="filterGradeTable()">
+                                <button class="btn-search-clear hidden" id="grade-search-clear" onclick="clearSearch('grade')">✕</button>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Grid -->
+                        <div class="stats-grid hidden" id="grade-stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-val" id="stat-total-students">0</span>
+                                <span class="stat-lbl">Total Registered</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-val text-success" id="stat-submitted">0</span>
+                                <span class="stat-lbl">Submitted</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-val text-warning" id="stat-no-submit">0</span>
+                                <span class="stat-lbl">No Submission</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-val" id="stat-average-grade">0.0</span>
+                                <span class="stat-lbl">Average Grade</span>
+                            </div>
+                        </div>
+
+                        <!-- Grade Distribution Chart -->
+                        <div class="distribution-chart-card hidden" id="grade-chart-card">
+                            <div class="chart-header">
+                                <h3>Grade Distribution</h3>
+                                <button class="btn-clear-filter hidden" id="btn-clear-grade-filter" onclick="clearGradeFilter()">✕ Clear Filter</button>
+                            </div>
+                            <div class="chart-bars" id="grade-chart-bars">
+                                <!-- Generated Dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Table Area -->
+                        <div class="table-container">
+                            <table id="graded-table">
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortGradeTable('github_username')">GitHub Username <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('name')">Student Name <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('checks_passed')">Checks Passed <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('checks_run')">Checks Run <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('grade')">Grade (out of 5) <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('style50_score')">Style Score <span class="sort-indicator"></span></th>
+                                        <th onclick="sortGradeTable('timestamp')">Submission Date <span class="sort-indicator"></span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="empty-row">
+                                        <td colspan="7">No submissions processed yet. Please upload a JSON file to get started.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: MERGE DAY TASKS -->
+            <section id="tab-content-merge" class="tab-panel">
+                <div class="grid-layout">
+                    <!-- Merge Config Sidebar -->
+                    <div class="card glass-card sidebar-card">
+                        <h2>Merge Configuration</h2>
+                        <p class="card-desc">Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.</p>
+
+                        <div class="dropzone" id="merge-dropzone">
+                            <input type="file" id="merge-file-input" accept=".json" class="file-input" multiple>
+                            <div class="dropzone-prompt">
+                                <span class="dropzone-icon">📂</span>
+                                <span class="dropzone-text">Drag & drop multiple files or <strong>browse</strong></span>
+                                <span class="dropzone-sub">Accepts ITI_problem_sheet.json files</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Uploaded Problem Sheets</label>
+                            <div class="file-list" id="merge-file-list">
+                                <div class="empty-list-prompt">No files added yet</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="merge-roster-input">Upload Roster (Optional)</label>
+                            <div class="mini-upload">
+                                <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
+                                <span class="mini-upload-btn" id="merge-roster-status">📂 Choose Roster File (CSV / TXT)</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons-stack">
+                            <button class="btn btn-primary" id="btn-export-csv-merge" onclick="exportMerged('csv')" disabled>
+                                🔄 Export Merged CSV
+                            </button>
+                            <button class="btn btn-secondary" id="btn-export-json-merge" onclick="exportMerged('json')" disabled>
+                                🔄 Export Merged JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Merged Data View -->
+                    <div class="card glass-card data-card">
+                        <div class="data-header">
+                            <div class="data-title-section">
+                                <h2 id="merged-title">Merged Daily Grades</h2>
+                                <p id="merged-stats-summary" class="stats-text">Upload graded JSON sheets to merge.</p>
+                            </div>
+                            <div class="search-bar">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" id="merge-search" placeholder="Search by username or name..." oninput="filterMergeTable()">
+                                <button class="btn-search-clear hidden" id="merge-search-clear" onclick="clearSearch('merge')">✕</button>
+                            </div>
+                        </div>
+
+                        <!-- Table Area -->
+                        <div class="table-container">
+                            <table id="merged-table">
+                                <thead>
+                                    <tr id="merged-table-header">
+                                        <th>GitHub Username</th>
+                                        <th>Student Name</th>
+                                        <th>Total Degree (Avg)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="empty-row">
+                                        <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: HELP & CLI GUIDE -->
+            <section id="tab-content-help" class="tab-panel">
+                <div class="card glass-card help-card">
+                    <h2>CLI Scripts & GitHub Pages Hosting</h2>
+                    <p class="intro-desc">Learn how to run the grading engine via terminal scripts or host this entire web tool online for free.</p>
+
+                    <div class="help-section">
+                        <h3>1. Formula details</h3>
+                        <div class="formula-box">
+                            <div class="formula-item">
+                                <strong>Individual Task Grade</strong>
+                                <span class="formula-math">Grade = round( (checks_passed / checks_run) * 5 )</span>
+                                <span class="formula-note">Calculated half-up. Defaults to 0 if checks_run is 0.</span>
+                            </div>
+                            <div class="formula-item">
+                                <strong>Daily Total Degree</strong>
+                                <span class="formula-math">Total Degree = round( sum(grades) / n )</span>
+                                <span class="formula-note">Where <em>n</em> is the number of problems assigned. Missing submissions score 0.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>2. Running Command Line Scripts</h3>
+                        <p>If you prefer using the terminal, run the Python scripts available under the <code>GradingTool/</code> folder. They require zero dependencies and run on standard Python 3.</p>
+
+                        <h4>Script 1: Grader for a Single Problem</h4>
+                        <pre><code>python3 grade_problem.py &lt;path_to_raw_submissions.json&gt; --deadline "YYYY-MM-DD HH:MM:SS" --roster roster.csv</code></pre>
+                        
+                        <h4>Script 2: Merger for a Single Day</h4>
+                        <pre><code>python3 merge_day.py ITI_compare_sheet.json ITI_vowels_sheet.json --roster roster.csv --output-prefix ITI_day_3_summary</code></pre>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>3. Free Hosting via GitHub Pages</h3>
+                        <p>Since this is a fully client-side tool, you can deploy it instantly on GitHub Pages:</p>
+                        <ol>
+                            <li>Create a repository on GitHub (or use your existing ITI repository).</li>
+                            <li>Commit the contents of the <code>GradingTool/web_app/</code> folder (e.g. <code>index.html</code>, <code>style.css</code>, and <code>app.js</code>) to the repository.</li>
+                            <li>Go to <strong>Settings</strong> > <strong>Pages</strong> in your GitHub repo dashboard.</li>
+                            <li>Set the Source branch (usually <code>main</code> or <code>master</code>) and folder (e.g., <code>/root</code> or <code>/docs</code>), then click <strong>Save</strong>.</li>
+                            <li>Your grading web application will be live at: <code>https://&lt;username&gt;.github.io/&lt;repo-name&gt;/</code>!</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 ITI Technical Team. Grade Processor made with visual excellence.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

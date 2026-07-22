@@ -1198,9 +1198,9 @@ svg.dropzone-icon {
     padding: 0.75rem;
     position: absolute;
     z-index: 100;
-    bottom: 130%; /* Position above the icon */
-    left: 50%;
-    transform: translateX(-50%);
+    left: 130%; /* Position to the right of the icon */
+    top: 50%;
+    transform: translateY(-50%);
     opacity: 0;
     transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
@@ -1213,21 +1213,39 @@ svg.dropzone-icon {
     -webkit-backdrop-filter: blur(12px);
 }
 
-/* Tooltip Arrow */
+/* Tooltip Arrow pointing to the left */
 .tooltip-text::after {
     content: "";
     position: absolute;
-    top: 100%; /* At the bottom of the tooltip */
-    left: 50%;
-    margin-left: -5px;
+    top: 50%;
+    right: 100%; /* At the left side of the tooltip */
+    margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: var(--border-color) transparent transparent transparent;
+    border-color: transparent var(--border-color) transparent transparent;
 }
 
 .info-tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
+
+/* Mobile responsive fallback (overlay above on small screens) */
+@media (max-width: 768px) {
+    .tooltip-text {
+        left: 50%;
+        bottom: 130%;
+        top: auto;
+        transform: translateX(-50%);
+    }
+    .tooltip-text::after {
+        top: 100%;
+        left: 50%;
+        right: auto;
+        margin-left: -5px;
+        border-color: var(--border-color) transparent transparent transparent;
+    }
+}
+
 
 

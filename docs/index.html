@@ -31,7 +31,6 @@
             </div>
             <div class="header-badges">
                 <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light theme"><i data-lucide="moon" class="btn-icon"></i> Dark Mode</button>
-                <span class="badge badge-primary">GitHub Pages Ready</span>
                 <span class="badge badge-secondary" id="system-time">Cairo Time</span>
             </div>
         </header>
@@ -45,7 +44,7 @@
                 <i data-lucide="git-merge" class="tab-icon"></i> Merge Day Tasks
             </button>
             <button class="nav-tab" id="tab-btn-help" onclick="switchTab('help')">
-                <i data-lucide="help-circle" class="tab-icon"></i> CLI & Hosting Guide
+                <i data-lucide="terminal" class="tab-icon"></i> CLI Scripts Guide
             </button>
         </nav>
 
@@ -263,8 +262,8 @@
             <!-- TAB 3: HELP & CLI GUIDE -->
             <section id="tab-content-help" class="tab-panel">
                 <div class="card glass-card help-card">
-                    <h2>CLI Scripts & GitHub Pages Hosting</h2>
-                    <p class="intro-desc">Learn how to run the grading engine via terminal scripts or host this entire web tool online for free.</p>
+                    <h2>CLI Grading Scripts</h2>
+                    <p class="intro-desc">Learn how to run the grading engine locally on your machine via Python terminal scripts.</p>
 
                     <div class="help-section">
                         <h3>1. Formula details</h3>
@@ -291,18 +290,6 @@
                         
                         <h4>Script 2: Merger for a Single Day</h4>
                         <pre><code>python3 merge_day.py ITI_compare_sheet.json ITI_vowels_sheet.json --roster roster.csv --output-prefix ITI_day_3_summary</code></pre>
-                    </div>
-
-                    <div class="help-section">
-                        <h3>3. Free Hosting via GitHub Pages</h3>
-                        <p>Since this is a fully client-side tool, you can deploy it instantly on GitHub Pages:</p>
-                        <ol>
-                            <li>Create a repository on GitHub (or use your existing ITI repository).</li>
-                            <li>Commit the contents of the <code>GradingTool/</code> folder to the repository (which contains a <code>docs/</code> folder).</li>
-                            <li>Go to <strong>Settings</strong> > <strong>Pages</strong> in your GitHub repo dashboard.</li>
-                            <li>Set the Source to <strong>Deploy from a branch</strong>, select the branch (e.g., <code>main</code> or <code>master</code>), choose the <code>/docs</code> folder, and click <strong>Save</strong>.</li>
-                            <li>Your grading web application will be live at: <code>https://&lt;username&gt;.github.io/&lt;repo-name&gt;/</code>!</li>
-                        </ol>
                     </div>
                 </div>
             </section>

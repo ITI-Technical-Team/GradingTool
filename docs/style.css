@@ -226,12 +226,18 @@ body {
     background-color: rgba(255, 255, 255, 0.03);
     border-color: var(--border-color);
 }
+.nav-tab:hover svg.tab-icon {
+    stroke: var(--primary);
+}
 
 .nav-tab.active {
     color: var(--color-text);
     background-color: var(--bg-surface);
     border-color: var(--primary);
     box-shadow: 0 4px 15px var(--primary-glow);
+}
+.nav-tab.active svg.tab-icon {
+    stroke: var(--primary);
 }
 
 .tab-icon {

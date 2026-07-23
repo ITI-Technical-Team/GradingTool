@@ -460,7 +460,9 @@ body {
     color: var(--color-text-muted);
 }
 
-.settings-group select, .settings-group input[type="datetime-local"] {
+.settings-group select,
+.settings-group input[type="datetime-local"],
+.settings-group input[type="text"] {
     background-color: var(--input-bg);
     border: 1px solid var(--border-color);
     color: var(--color-text);
@@ -471,9 +473,12 @@ body {
     transition: var(--transition-smooth);
     outline: none;
     width: 100%;
+    box-sizing: border-box;
 }
 
-.settings-group select:focus, .settings-group input[type="datetime-local"]:focus {
+.settings-group select:focus,
+.settings-group input[type="datetime-local"]:focus,
+.settings-group input[type="text"]:focus {
     border-color: var(--primary);
     box-shadow: 0 0 10px var(--primary-glow);
 }

@@ -823,6 +823,16 @@ th.sort-desc .sort-indicator::after {
     border-radius: 6px;
     font-size: 0.8rem;
     animation: fadeIn 0.3s ease;
+    overflow: hidden;
+}
+
+.merge-file-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0.5rem;
+    min-width: 0;
 }
 
 .merge-file-item:hover {

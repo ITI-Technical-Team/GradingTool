@@ -147,7 +147,7 @@ window.clearGradeFile = function() {
     document.getElementById("btn-export-json-grade").disabled = true;
     
     // Clear Table
-    const tbody = document.querySelector("#graded-table tbody");
+    const tbody = document.querySelector("#grade-table tbody");
     tbody.innerHTML = `
         <tr class="empty-row">
             <td colspan="7">No submissions processed yet. Please upload a JSON file to get started.</td>
@@ -305,7 +305,7 @@ window.recalculateGrade = function() {
 let activeGradeFilter = null;
 
 function renderGradeTable() {
-    const tbody = document.querySelector("#graded-table tbody");
+    const tbody = document.querySelector("#grade-table tbody");
     tbody.innerHTML = "";
     
     let displayResults = gradedResults;
@@ -410,7 +410,7 @@ window.filterGradeTable = function() {
         clearBtn.classList.add("hidden");
     }
     
-    const rows = document.querySelectorAll("#graded-table tbody tr");
+    const rows = document.querySelectorAll("#grade-table tbody tr");
     rows.forEach(row => {
         if (row.classList.contains("empty-row")) return;
         const text = row.innerText.toLowerCase();
@@ -527,7 +527,7 @@ window.sortGradeTable = function(columnKey) {
     sortDirection[columnKey] = nextDir;
     
     // Update headers indicators
-    const headers = document.querySelectorAll("#graded-table th");
+    const headers = document.querySelectorAll("#grade-table th");
     headers.forEach(h => {
         h.classList.remove("sort-asc", "sort-desc");
     });
@@ -556,6 +556,11 @@ window.sortGradeTable = function(columnKey) {
     });
     
     renderGradeTable();
+};
+
+window.sortTable = window.sortGradeTable;
+window.clearGradeSearch = function() {
+    window.clearSearch('grade');
 };
 
 // Roster upload files parsing

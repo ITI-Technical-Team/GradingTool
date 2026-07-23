@@ -82,7 +82,7 @@
 
                         <div class="settings-group">
                             <label for="grade-deadline">Submission Deadline (Optional)</label>
-                            <input type="datetime-local" id="grade-deadline" onchange="recalculateGrade()">
+                            <input type="text" id="grade-deadline" placeholder="Set deadline (Optional)..." onfocus="(this.type='datetime-local')" onblur="if(!this.value)this.type='text'" onchange="recalculateGrade()">
                         </div>
 
                         <div class="settings-group">
@@ -127,12 +127,12 @@
                         <div class="data-header">
                             <div class="data-title-section">
                                 <h2 id="graded-title">Graded Results</h2>
-                                <p id="graded-stats-summary" class="stats-text">Upload a file to see the statistics.</p>
+                                <p class="card-desc" id="graded-stats-summary">Upload a file to see the statistics.</p>
                             </div>
-                            <div class="search-bar">
+                            <div class="search-container">
                                 <i data-lucide="search" class="search-icon"></i>
                                 <input type="text" id="grade-search" placeholder="Search by username or name..." oninput="filterGradeTable()">
-                                <button class="btn-search-clear hidden" id="grade-search-clear" onclick="clearSearch('grade')" aria-label="Clear search"><i data-lucide="x" class="btn-icon"></i></button>
+                                <button id="grade-search-clear" class="btn-search-clear hidden" onclick="clearGradeSearch()">✕</button>
                             </div>
                         </div>
 
@@ -159,26 +159,26 @@
                         <!-- Grade Distribution Chart -->
                         <div class="distribution-chart-card hidden" id="grade-chart-card">
                             <div class="chart-header">
-                                <h3>Grade Distribution</h3>
-                                <button class="btn-clear-filter hidden" id="btn-clear-grade-filter" onclick="clearGradeFilter()"><i data-lucide="x" class="btn-icon"></i> Clear Filter</button>
+                                <h3>Grade Distribution (out of 5)</h3>
+                                <button class="btn-clear-filter hidden" id="btn-clear-grade-filter" onclick="clearGradeFilter()">✕ Clear Filter</button>
                             </div>
                             <div class="chart-bars" id="grade-chart-bars">
-                                <!-- Generated Dynamically -->
+                                <!-- Bars will be inserted dynamically -->
                             </div>
                         </div>
 
                         <!-- Table Area -->
                         <div class="table-container">
-                            <table id="graded-table">
+                            <table class="data-table" id="grade-table">
                                 <thead>
                                     <tr>
-                                        <th onclick="sortGradeTable('github_username')">GitHub Username <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('name')">Student Name <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('checks_passed')">Checks Passed <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('checks_run')">Checks Run <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('grade')">Grade (out of 5) <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('style50_score')">Style Score <span class="sort-indicator"></span></th>
-                                        <th onclick="sortGradeTable('timestamp')">Submission Date <span class="sort-indicator"></span></th>
+                                        <th onclick="sortTable('github_username')">GitHub Username <span class="sort-indicator" id="sort-github_username"></span></th>
+                                        <th onclick="sortTable('name')">Student Name <span class="sort-indicator" id="sort-name"></span></th>
+                                        <th onclick="sortTable('checks_passed')">Checks Passed <span class="sort-indicator" id="sort-checks_passed"></span></th>
+                                        <th onclick="sortTable('checks_run')">Checks Run <span class="sort-indicator" id="sort-checks_run"></span></th>
+                                        <th onclick="sortTable('grade')">Grade (out of 5) <span class="sort-indicator" id="sort-grade"></span></th>
+                                        <th onclick="sortTable('style50_score')">Style Score <span class="sort-indicator" id="sort-style50_score"></span></th>
+                                        <th onclick="sortTable('timestamp')">Submission Date <span class="sort-indicator" id="sort-timestamp"></span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -227,9 +227,8 @@
                         <div id="merge-raw-settings" class="hidden-settings hidden">
                             <div class="settings-group">
                                 <label for="merge-deadline">Submission Deadline (Optional)</label>
-                                <input type="datetime-local" id="merge-deadline" onchange="recalculateMerge()">
+                                <input type="text" id="merge-deadline" placeholder="Set deadline (Optional)..." onfocus="(this.type='datetime-local')" onblur="if(!this.value)this.type='text'" onchange="recalculateMerge()">
                             </div>
-
                             <div class="settings-group">
                                 <label for="merge-timezone">Timezone Offset</label>
                                 <select id="merge-timezone" onchange="recalculateMerge()">

@@ -106,10 +106,13 @@
     --badge-0-border: rgba(355, 50%, 50%, 0.25);
 }
 
+body, input, select, textarea, button, table, th, td {
+    font-family: var(--font-sans);
+}
+
 body {
     background-color: var(--bg-base);
     color: var(--color-text);
-    font-family: var(--font-sans);
     line-height: 1.5;
     min-height: 100vh;
     overflow-x: hidden;
@@ -761,6 +764,7 @@ th {
     cursor: pointer;
     user-select: none;
     transition: var(--transition-smooth);
+    vertical-align: middle;
 }
 
 th:hover {

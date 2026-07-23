@@ -198,14 +198,21 @@
                     <!-- Merge Config Sidebar -->
                     <div class="card glass-card sidebar-card">
                         <h2>Merge Configuration</h2>
-                        <p class="card-desc">Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.</p>
+                        
+                        <!-- Segmented Mode Control -->
+                        <div class="segmented-control">
+                            <button class="segmented-btn active" id="btn-merge-mode-graded" onclick="switchMergeMode('graded')">Graded Sheets</button>
+                            <button class="segmented-btn" id="btn-merge-mode-raw" onclick="switchMergeMode('raw')">Raw Submissions</button>
+                        </div>
+
+                        <p class="card-desc" id="merge-description">Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.</p>
 
                         <div class="dropzone" id="merge-dropzone">
                             <input type="file" id="merge-file-input" accept=".json" class="file-input" multiple>
                             <div class="dropzone-prompt">
                                 <i data-lucide="upload-cloud" class="dropzone-icon"></i>
                                 <span class="dropzone-text">Drag & drop multiple files or <strong>browse</strong></span>
-                                <span class="dropzone-sub">Accepts ITI_problem_sheet.json files</span>
+                                <span class="dropzone-sub" id="merge-dropzone-sub">Accepts ITI_problem_sheet.json files</span>
                             </div>
                         </div>
 
@@ -213,6 +220,23 @@
                             <label>Uploaded Problem Sheets</label>
                             <div class="file-list" id="merge-file-list">
                                 <div class="empty-list-prompt">No files added yet</div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic settings shown only in Raw Mode -->
+                        <div id="merge-raw-settings" class="hidden-settings hidden">
+                            <div class="settings-group">
+                                <label for="merge-deadline">Submission Deadline (Optional)</label>
+                                <input type="datetime-local" id="merge-deadline" onchange="recalculateMerge()">
+                            </div>
+
+                            <div class="settings-group">
+                                <label for="merge-timezone">Timezone Offset</label>
+                                <select id="merge-timezone" onchange="recalculateMerge()">
+                                    <option value="3" selected>UTC +3 (Cairo Summer Time / EEST)</option>
+                                    <option value="2">UTC +2 (Cairo Standard Time / EET)</option>
+                                    <option value="0">UTC +0 (GMT / UTC)</option>
+                                </select>
                             </div>
                         </div>
 

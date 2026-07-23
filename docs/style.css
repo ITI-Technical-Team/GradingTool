@@ -1274,5 +1274,54 @@ svg.dropzone-icon {
     }
 }
 
+/* Segmented Control Toggle for Merge tab */
+.segmented-control {
+    display: flex;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    padding: 3px;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    gap: 2px;
+}
+
+.segmented-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-align: center;
+}
+
+.segmented-btn:hover {
+    color: var(--color-text);
+}
+
+.segmented-btn.active {
+    background-color: var(--bg-surface);
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Dynamic settings container */
+.hidden-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+    animation: fadeIn 0.3s ease-out;
+}
+.hidden-settings.hidden {
+    display: none !important;
+}
+
+
 
 

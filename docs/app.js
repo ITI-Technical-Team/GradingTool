@@ -681,6 +681,129 @@ function triggerDownload(content, filename, mimeType) {
 // TAB 2: MERGING LOGIC
 // ----------------------------------------------------
 
+let mergeMode = 'graded'; // 'graded' or 'raw'
+
+window.switchMergeMode = function(mode) {
+    if (mode === mergeMode) return;
+    mergeMode = mode;
+    
+    // Toggle active buttons and show/hide settings
+    const btnGraded = document.getElementById("btn-merge-mode-graded");
+    const btnRaw = document.getElementById("btn-merge-mode-raw");
+    const rawSettings = document.getElementById("merge-raw-settings");
+    const mergeDesc = document.getElementById("merge-description");
+    const dropzoneSub = document.getElementById("merge-dropzone-sub");
+    
+    // Reset file drawer to avoid confusion
+    uploadedMergeSheets = {};
+    renderMergeFileList();
+    recalculateMerge();
+    
+    if (mode === 'raw') {
+        if (btnGraded) btnGraded.classList.remove("active");
+        if (btnRaw) btnRaw.classList.add("active");
+        if (rawSettings) rawSettings.classList.remove("hidden");
+        if (mergeDesc) mergeDesc.innerText = "Upload multiple raw submissions (JSON) to dynamically grade and merge them into a single day grade.";
+        if (dropzoneSub) dropzoneSub.innerText = "Accepts raw submissions JSON files";
+    } else {
+        if (btnGraded) btnGraded.classList.add("active");
+        if (btnRaw) btnRaw.classList.remove("active");
+        if (rawSettings) rawSettings.classList.add("hidden");
+        if (mergeDesc) mergeDesc.innerText = "Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.";
+        if (dropzoneSub) dropzoneSub.innerText = "Accepts ITI_problem_sheet.json files";
+    }
+    lucide.createIcons();
+};
+
+function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
+    const submissions = rawDict[slug] || [];
+    let deadlineDate = null;
+    if (deadlineVal) {
+        deadlineDate = new Date(deadlineVal);
+    }
+    
+    // Group and find best submissions before deadline
+    const grouped = {};
+    submissions.forEach(sub => {
+        const username = sub.github_username;
+        if (!username) return;
+        
+        const subTime = parseSubmissionTimestamp(sub.timestamp);
+        if (deadlineDate && subTime && subTime > deadlineDate) {
+            return; // Skip submission after deadline
+        }
+        
+        sub._parsed_time = subTime;
+        if (!grouped[username]) {
+            grouped[username] = [];
+        }
+        grouped[username].push(sub);
+    });
+    
+    const graded = {};
+    Object.keys(grouped).forEach(username => {
+        const subs = grouped[username];
+        // Sort: checks_passed desc, time desc
+        subs.sort((a, b) => {
+            const cpA = a.checks_passed || 0;
+            const cpB = b.checks_passed || 0;
+            if (cpA !== cpB) return cpB - cpA;
+            
+            const ptA = a._parsed_time ? a._parsed_time.getTime() : 0;
+            const ptB = b._parsed_time ? b._parsed_time.getTime() : 0;
+            return ptB - ptA;
+        });
+        graded[username] = subs[0];
+    });
+    
+    // Union of all usernames (submissions + roster)
+    const allUsernames = new Set();
+    submissions.forEach(sub => {
+        if (sub.github_username) {
+            allUsernames.add(sub.github_username);
+        }
+    });
+    if (roster) {
+        Object.keys(roster).forEach(u => allUsernames.add(u));
+    }
+    
+    const results = [];
+    const sortedUsernames = Array.from(allUsernames).sort();
+    sortedUsernames.forEach(username => {
+        const record = {
+            github_username: username,
+            name: roster ? roster[username] : null,
+            checks_passed: 0,
+            checks_run: 0,
+            grade: 0,
+            style50_score: null,
+            timestamp: "No submission",
+            github_url: null
+        };
+        
+        if (graded[username]) {
+            const sub = graded[username];
+            const checks_passed = sub.checks_passed || 0;
+            const checks_run = sub.checks_run || 0;
+            let grade = 0;
+            if (checks_run > 0) {
+                grade = Math.round((checks_passed / checks_run) * 5);
+            }
+            
+            record.name = sub.name || record.name;
+            record.checks_passed = checks_passed;
+            record.checks_run = checks_run;
+            record.grade = grade;
+            record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
+            record.timestamp = sub.timestamp;
+            record.github_url = sub.github_url;
+        }
+        results.push(record);
+    });
+    
+    return results;
+}
+
 function handleMergeFiles(files) {
     let loadedCount = 0;
     
@@ -693,25 +816,53 @@ function handleMergeFiles(files) {
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const records = JSON.parse(e.target.result);
-                if (!Array.isArray(records)) {
-                    alert(`Invalid structure in ${file.name}. Must be a JSON array of graded records.`);
-                    return;
-                }
+                const parsed = JSON.parse(e.target.result);
                 
-                // Extract problem name
-                let probName = file.name;
-                const match = file.name.match(/^ITI_(.+)_sheet\.json$/);
-                if (match) {
-                    probName = match[1];
+                if (mergeMode === 'graded') {
+                    if (!Array.isArray(parsed)) {
+                        alert(`Invalid structure in ${file.name}. You are in 'Graded Sheets' mode, but this file contains raw submissions. Please switch to 'Raw Submissions' mode.`);
+                        return;
+                    }
+                    
+                    let probName = file.name;
+                    const match = file.name.match(/^ITI_(.+)_sheet\.json$/);
+                    if (match) {
+                        probName = match[1];
+                    } else {
+                        probName = file.name.replace(".json", "");
+                    }
+                    
+                    uploadedMergeSheets[file.name] = {
+                        isRaw: false,
+                        problemName: probName,
+                        records: parsed
+                    };
                 } else {
-                    probName = file.name.replace(".json", "");
+                    // Raw mode
+                    if (Array.isArray(parsed) || typeof parsed !== 'object' || parsed === null) {
+                        alert(`Invalid structure in ${file.name}. You are in 'Raw Submissions' mode, but this file contains already graded sheets. Please switch to 'Graded Sheets' mode.`);
+                        return;
+                    }
+                    
+                    const slugs = Object.keys(parsed);
+                    if (slugs.length === 0) {
+                        alert(`No problem slugs found in raw file ${file.name}.`);
+                        return;
+                    }
+                    
+                    slugs.forEach(slug => {
+                        const cleanName = slug.split("/").pop() || slug;
+                        const uniqueKey = `${file.name}::${slug}`;
+                        
+                        uploadedMergeSheets[uniqueKey] = {
+                            isRaw: true,
+                            rawData: parsed,
+                            slug: slug,
+                            problemName: cleanName,
+                            fileName: file.name
+                        };
+                    });
                 }
-                
-                uploadedMergeSheets[file.name] = {
-                    problemName: probName,
-                    records: records
-                };
                 
                 loadedCount++;
                 if (loadedCount === files.length) {
@@ -741,7 +892,8 @@ function renderMergeFileList() {
         item.className = "merge-file-item";
         
         const nameSpan = document.createElement("span");
-        nameSpan.innerHTML = `<i data-lucide="file-code" class="file-icon"></i> ${uploadedMergeSheets[key].problemName} <span class="dimmed-filename">(${key})</span>`;
+        const displayName = key.includes("::") ? key.split("::")[0] : key;
+        nameSpan.innerHTML = `<i data-lucide="file-code" class="file-icon"></i> ${uploadedMergeSheets[key].problemName} <span class="dimmed-filename">(${displayName})</span>`;
         item.appendChild(nameSpan);
         
         const delBtn = document.createElement("button");
@@ -779,6 +931,17 @@ function recalculateMerge() {
             </tr>
         `;
         return;
+    }
+    
+    // Dynamically grade raw sheets if we are in raw mode
+    if (mergeMode === 'raw') {
+        const deadlineVal = document.getElementById("merge-deadline") ? document.getElementById("merge-deadline").value : "";
+        fileKeys.forEach(k => {
+            const sheet = uploadedMergeSheets[k];
+            if (sheet.isRaw) {
+                sheet.records = gradeRawSlugSubmissions(sheet.rawData, sheet.slug, deadlineVal, mergeRoster);
+            }
+        });
     }
     
     mergeProblemNames = fileKeys.map(k => uploadedMergeSheets[k].problemName);

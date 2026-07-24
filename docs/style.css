@@ -742,14 +742,18 @@ body {
 
 /* Data Tables */
 .table-container {
+    width: 100%;
+    display: block;
     overflow-x: auto;
     border: 1px solid var(--border-color);
     border-radius: 12px;
     background-color: var(--panel-bg);
+    box-sizing: border-box;
 }
 
 table {
     width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
     text-align: left;

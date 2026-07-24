@@ -2,11 +2,13 @@
 let rawProblemData = null; // Raw parsed JSON from grade file
 let selectedSlug = "";
 let studentRoster = null; // Roster from grade tab
+let studentRosterOrder = []; // Ordered list of usernames from grade roster file
 let rosterFileName = "";
 let gradedResults = []; // Currently graded and filtered results
 let sortDirection = {}; // Column sort states
 
 let mergeRoster = null; // Roster from merge tab
+let mergeRosterOrder = []; // Ordered list of usernames from merge roster file
 let mergeRosterFileName = "";
 let uploadedMergeSheets = {}; // filename -> { problemName, records: [ { github_username, name, grade } ] }
 let mergedResults = []; // Currently merged results
@@ -242,7 +244,22 @@ window.recalculateGrade = function() {
     let totalGradeSum = 0;
     let submittedCount = 0;
     
-    const sortedUsernames = Array.from(allUsernames).sort();
+    let sortedUsernames;
+    if (studentRosterOrder && studentRosterOrder.length > 0) {
+        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
+            const idxA = studentRosterOrder.indexOf(a);
+            const idxB = studentRosterOrder.indexOf(b);
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB; // Both in roster, preserve roster order
+            }
+            if (idxA !== -1) return -1; // Roster students first
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b); // Non-roster students sorted alphabetically at the end
+        });
+    } else {
+        sortedUsernames = Array.from(allUsernames).sort();
+    }
     sortedUsernames.forEach(username => {
         const record = {
             github_username: username,
@@ -572,6 +589,7 @@ window.loadRosterFile = function(input, tab) {
     reader.onload = function(e) {
         const text = e.target.result;
         const roster = {};
+        const rosterOrder = [];
         
         if (file.name.endsWith('.csv')) {
             const lines = text.split('\n');
@@ -596,7 +614,12 @@ window.loadRosterFile = function(input, tab) {
                     if (cols.length > usernameIdx) {
                         const uname = cols[usernameIdx].trim();
                         const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim() : null;
-                        if (uname) roster[uname] = name;
+                        if (uname) {
+                            roster[uname] = name;
+                            if (!rosterOrder.includes(uname)) {
+                                rosterOrder.push(uname);
+                            }
+                        }
                     }
                 }
             }
@@ -607,22 +630,31 @@ window.loadRosterFile = function(input, tab) {
                 line = line.trim();
                 if (!line || line.startsWith('#')) return;
                 const parts = line.split(',');
-                if (parts.length >= 2) {
-                    roster[parts[0].trim()] = parts[1].trim();
-                } else if (parts.length === 1) {
-                    roster[parts[0].trim()] = null;
+                const uname = parts[0].trim();
+                if (uname) {
+                    if (parts.length >= 2) {
+                        roster[uname] = parts[1].trim();
+                    } else {
+                        roster[uname] = null;
+                    }
+                    if (!rosterOrder.includes(uname)) {
+                        rosterOrder.push(uname);
+                    }
                 }
             });
         }
         
         if (tab === 'grade') {
             studentRoster = roster;
+            studentRosterOrder = rosterOrder;
+            sortDirection = {}; // Clear manual sorting so it defaults to the new roster order
             rosterFileName = file.name;
             document.getElementById("grade-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
             lucide.createIcons();
             recalculateGrade();
         } else {
             mergeRoster = roster;
+            mergeRosterOrder = rosterOrder;
             mergeRosterFileName = file.name;
             document.getElementById("merge-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
             lucide.createIcons();
@@ -773,7 +805,22 @@ function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
     }
     
     const results = [];
-    const sortedUsernames = Array.from(allUsernames).sort();
+    let sortedUsernames;
+    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
+        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
+            const idxA = mergeRosterOrder.indexOf(a);
+            const idxB = mergeRosterOrder.indexOf(b);
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB;
+            }
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    } else {
+        sortedUsernames = Array.from(allUsernames).sort();
+    }
     sortedUsernames.forEach(username => {
         const record = {
             github_username: username,
@@ -967,7 +1014,22 @@ function recalculateMerge() {
     
     // Merge grades
     mergedResults = [];
-    const sortedUsernames = Array.from(allUsernames).sort();
+    let sortedUsernames;
+    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
+        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
+            const idxA = mergeRosterOrder.indexOf(a);
+            const idxB = mergeRosterOrder.indexOf(b);
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB;
+            }
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    } else {
+        sortedUsernames = Array.from(allUsernames).sort();
+    }
     
     sortedUsernames.forEach(username => {
         const record = {

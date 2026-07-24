@@ -703,7 +703,8 @@ window.exportGraded = function(format) {
 };
 
 function triggerDownload(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
+    const blobContent = mimeType === "text/csv" ? ["\uFEFF", content] : [content];
+    const blob = new Blob(blobContent, { type: `${mimeType};charset=utf-8;` });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

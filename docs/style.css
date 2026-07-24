@@ -1,3 +1,7 @@
+html {
+    scrollbar-gutter: stable;
+}
+
 /* Reset and Global Styles */
 * {
     margin: 0;
@@ -775,6 +779,15 @@ th:hover {
     color: var(--color-text);
     background-color: rgba(255, 255, 255, 0.04);
 }
+
+/* Explicit column widths for grade-table to prevent layout shifting on filter */
+#grade-table th:nth-child(1) { width: 18%; }
+#grade-table th:nth-child(2) { width: 18%; }
+#grade-table th:nth-child(3) { width: 10%; }
+#grade-table th:nth-child(4) { width: 10%; }
+#grade-table th:nth-child(5) { width: 12%; }
+#grade-table th:nth-child(6) { width: 10%; }
+#grade-table th:nth-child(7) { width: 22%; }
 
 td {
     padding: 0.75rem 1rem;

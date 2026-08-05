@@ -13,6 +13,8 @@ let mergeRosterFileName = "";
 let uploadedMergeSheets = {}; // filename -> { problemName, records: [ { github_username, name, grade } ] }
 let mergedResults = []; // Currently merged results
 let mergeProblemNames = []; // Column names for problems
+let mergeProblemCols = []; // Column metadata with unique keys
+
 
 const monthNames = {
     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -1006,7 +1008,12 @@ function recalculateMerge() {
         });
     }
     
-    mergeProblemNames = fileKeys.map(k => uploadedMergeSheets[k].problemName);
+    // Build unique column structures
+    mergeProblemCols = fileKeys.map(k => ({
+        key: k,
+        problemName: uploadedMergeSheets[k].problemName
+    }));
+    mergeProblemNames = mergeProblemCols.map(c => c.problemName);
     
     // Find union of usernames
     const allUsernames = new Set();
@@ -1049,12 +1056,12 @@ function recalculateMerge() {
         
         let sumGrades = 0;
         
-        fileKeys.forEach(k => {
-            const sheet = uploadedMergeSheets[k];
+        mergeProblemCols.forEach(col => {
+            const sheet = uploadedMergeSheets[col.key];
             const studentRec = sheet.records.find(r => r.github_username === username);
             const grade = studentRec ? (studentRec.grade || 0) : 0;
             
-            record[sheet.problemName] = grade;
+            record[col.key] = grade;
             sumGrades += grade;
             
             if (!record.name && studentRec && studentRec.name) {
@@ -1163,9 +1170,9 @@ function renderMergeTable() {
     headerRow.innerHTML = "<th>GitHub Username</th><th>Student Name</th>";
     
     // Add columns for problems
-    mergeProblemNames.forEach(probName => {
+    mergeProblemCols.forEach(col => {
         const th = document.createElement("th");
-        th.innerText = probName;
+        th.innerText = col.problemName;
         headerRow.appendChild(th);
     });
     
@@ -1181,7 +1188,7 @@ function renderMergeTable() {
     if (mergedResults.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="${mergeProblemNames.length + 3}">No merge records computed.</td>
+                <td colspan="${mergeProblemCols.length + 3}">No merge records computed.</td>
             </tr>
         `;
         return;
@@ -1202,10 +1209,10 @@ function renderMergeTable() {
         tdName.innerText = rec.name || "-";
         tr.appendChild(tdName);
         
-        // Problem grades
-        mergeProblemNames.forEach(probName => {
+        // Problem grades using unique col.key
+        mergeProblemCols.forEach(col => {
             const tdProb = document.createElement("td");
-            const grade = rec[probName] || 0;
+            const grade = rec[col.key] || 0;
             const badge = document.createElement("span");
             badge.className = `grade-badge grade-${grade}`;
             badge.innerText = grade;
@@ -1256,24 +1263,36 @@ window.exportMerged = function(format) {
     let mimeType = "";
     
     if (format === 'json') {
-        content = JSON.stringify(mergedResults, null, 2);
+        const exportRecords = mergedResults.map(rec => {
+            const cleanRec = {
+                github_username: rec.github_username,
+                name: rec.name
+            };
+            mergeProblemCols.forEach(col => {
+                cleanRec[col.problemName] = rec[col.key] || 0;
+            });
+            cleanRec.total_degree = rec.total_degree;
+            return cleanRec;
+        });
+        content = JSON.stringify(exportRecords, null, 2);
         mimeType = "application/json";
     } else {
         // CSV
-        const headers = ["github_username", "name"].concat(mergeProblemNames).concat(["total_degree"]);
+        const headers = ["github_username", "name"].concat(mergeProblemCols.map(c => c.problemName)).concat(["total_degree"]);
         const rows = [headers.join(",")];
         
         mergedResults.forEach(rec => {
-            const line = headers.map(key => {
-                let val = rec[key];
-                if (val === null || val === undefined) val = "";
-                // Escape quotes
-                val = String(val).replace(/"/g, '""');
-                if (val.includes(",") || val.includes("\n") || val.includes('"')) {
-                    val = `"${val}"`;
-                }
-                return val;
-            });
+            const line = ["github_username", "name"].map(k => rec[k])
+                .concat(mergeProblemCols.map(col => rec[col.key] || 0))
+                .concat([rec.total_degree])
+                .map(val => {
+                    if (val === null || val === undefined) val = "";
+                    val = String(val).replace(/"/g, '""');
+                    if (val.includes(",") || val.includes("\n") || val.includes('"')) {
+                        val = `"${val}"`;
+                    }
+                    return val;
+                });
             rows.push(line.join(","));
         });
         content = rows.join("\n");
@@ -1282,6 +1301,7 @@ window.exportMerged = function(format) {
     
     triggerDownload(content, filename, mimeType);
 };
+
 
 
 // ----------------------------------------------------

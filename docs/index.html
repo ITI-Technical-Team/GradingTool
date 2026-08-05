@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=2.2">
+    <link rel="stylesheet" href="style.css?v=3.0">
+
 
 
     <!-- Lucide Icons CDN -->
@@ -226,63 +227,70 @@
                             </div>
                         </div>
 
-                        <!-- Dynamic settings shown only in Raw Mode -->
-                        <div id="merge-raw-settings" class="hidden-settings hidden">
-                            <div class="settings-row">
-                                <div class="settings-group">
-                                    <label for="merge-deadline">Deadline (Optional)</label>
-                                    <input type="text" id="merge-deadline" placeholder="Set deadline..." onfocus="(this.type='datetime-local')" onblur="if(!this.value)this.type='text'" onchange="recalculateMerge()">
-                                </div>
-                                <div class="settings-group">
-                                    <label for="merge-timezone">Timezone Offset</label>
-                                    <select id="merge-timezone" onchange="recalculateMerge()">
-                                        <option value="3" selected>UTC +3 (Cairo EEST)</option>
-                                        <option value="2">UTC +2 (Cairo EET)</option>
-                                        <option value="0">UTC +0 (GMT)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Gradebook Export Configuration Card -->
                         <div class="gradebook-card-group">
                             <div class="card-group-header">
                                 <i data-lucide="graduation-cap" class="group-icon"></i> Gradebook Settings
                             </div>
 
-                            <div class="settings-row">
-                                <div class="settings-group">
-                                    <label for="merge-course-id">Course ID / Name</label>
-                                    <input type="text" id="merge-course-id" placeholder="e.g. CS50_Alex_2026" oninput="updateExportFilenamePreview()">
-                                </div>
-                                <div class="settings-group">
-                                    <label for="merge-day-num">Day Number</label>
-                                    <input type="number" id="merge-day-num" min="1" placeholder="Day #" oninput="updateExportFilenamePreview()">
-                                </div>
+                            <div class="settings-group">
+                                <label for="merge-course-id">Course ID / Name</label>
+                                <input type="text" id="merge-course-id" placeholder="e.g. Alexandria_August_2026" oninput="updateExportFilenamePreview()">
                             </div>
 
-                            <div class="settings-row">
-                                <div class="settings-group">
+                            <div class="asymmetric-row">
+                                <div class="settings-group col-35">
+                                    <label for="merge-day-num">Day #</label>
+                                    <input type="number" id="merge-day-num" min="1" placeholder="Day #" oninput="updateExportFilenamePreview()">
+                                </div>
+                                <div class="settings-group col-65">
                                     <label>Sheet Type</label>
                                     <div class="segmented-control type-segmented">
                                         <button type="button" class="segmented-btn active" id="btn-type-lab" onclick="setMergeSheetType('lab')">🧪 Lab</button>
                                         <button type="button" class="segmented-btn" id="btn-type-lec" onclick="setMergeSheetType('lec')">📘 Lecture</button>
                                     </div>
                                 </div>
-                                <div class="settings-group">
-                                    <label for="merge-roster-input">Upload Roster</label>
-                                    <div class="mini-upload">
-                                        <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
-                                        <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose File</span>
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="filename-preview-card">
                                 <span class="preview-lbl">Export Filename:</span>
-                                <code id="export-filename-preview">CS50_Alex_2026-merged_day-1-lab-sheet.json</code>
+                                <code id="export-filename-preview">Alexandria_August_2026-merged_day-1-lab-sheet.json</code>
                             </div>
                         </div>
+
+                        <!-- Collapsible Optional Options (Roster, Deadline, Timezone) -->
+                        <div class="optional-accordion">
+                            <div class="accordion-header" onclick="toggleOptionalAccordion()">
+                                <span><i data-lucide="sliders" class="btn-icon"></i> Optional Tools & Roster</span>
+                                <i data-lucide="chevron-down" id="optional-accordion-icon" style="transition: transform 0.2s ease;"></i>
+                            </div>
+                            <div class="accordion-content hidden" id="optional-accordion-content">
+                                <div class="settings-group">
+                                    <label for="merge-roster-input">Upload Roster (Optional)</label>
+                                    <div class="mini-upload">
+                                        <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
+                                        <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File</span>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic settings shown only in Raw Mode -->
+                                <div id="merge-raw-settings" class="hidden-settings hidden">
+                                    <div class="settings-group">
+                                        <label for="merge-deadline">Submission Deadline</label>
+                                        <input type="text" id="merge-deadline" placeholder="Set deadline (Optional)..." onfocus="(this.type='datetime-local')" onblur="if(!this.value)this.type='text'" onchange="recalculateMerge()">
+                                    </div>
+                                    <div class="settings-group">
+                                        <label for="merge-timezone">Timezone Offset</label>
+                                        <select id="merge-timezone" onchange="recalculateMerge()">
+                                            <option value="3" selected>UTC +3 (Cairo EEST)</option>
+                                            <option value="2">UTC +2 (Cairo EET)</option>
+                                            <option value="0">UTC +0 (GMT)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
 
                         <div class="action-buttons-stack">
                             <button class="btn btn-primary" id="btn-export-json-merge" onclick="exportMerged('json')" disabled>
@@ -373,7 +381,8 @@
     </div>
 
     <!-- JavaScript Logic -->
-    <script src="app.js?v=2.0"></script>
+    <script src="app.js?v=3.0"></script>
 </body>
+
 
 </html>

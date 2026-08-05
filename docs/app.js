@@ -1148,6 +1148,16 @@ function extractDayFromSlugs() {
     updateExportFilenamePreview();
 }
 
+window.toggleOptionalAccordion = function() {
+    const content = document.getElementById("optional-accordion-content");
+    const icon = document.getElementById("optional-accordion-icon");
+    if (content && icon) {
+        const isHidden = content.classList.toggle("hidden");
+        icon.style.transform = isHidden ? "rotate(0deg)" : "rotate(180deg)";
+    }
+};
+
+
 function renderMergeTable() {
     const headerRow = document.getElementById("merged-table-header");
     headerRow.innerHTML = "<th>GitHub Username</th><th>Student Name</th>";

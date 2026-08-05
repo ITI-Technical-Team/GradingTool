@@ -649,6 +649,61 @@ body {
     gap: 0.2rem;
 }
 
+/* Asymmetric Row (35% / 65% Column Layout) */
+.asymmetric-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+}
+.asymmetric-row .col-35 {
+    width: 35%;
+    flex: 0 0 35%;
+}
+.asymmetric-row .col-65 {
+    width: 65%;
+    flex: 0 0 65%;
+}
+
+/* Collapsible Optional Accordion Drawer */
+.optional-accordion {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+.dark-theme .optional-accordion {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+.accordion-header {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: var(--transition-smooth);
+}
+.accordion-header:hover {
+    color: var(--color-text);
+    background-color: var(--bg-hover);
+}
+.accordion-content {
+    padding: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.accordion-content.hidden {
+    display: none;
+}
+
+
 .filename-preview-card {
     background-color: var(--bg-hover);
     border: 1px dashed var(--border-color);

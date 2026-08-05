@@ -570,7 +570,38 @@ body {
     z-index: 2;
 }
 
+/* Gradebook Export Integration Styling */
+.filename-preview-card {
+    background-color: var(--bg-hover);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.78rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.filename-preview-card .preview-lbl {
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+}
+.filename-preview-card code {
+    font-family: var(--font-mono, monospace);
+    color: #0284c7;
+    word-break: break-all;
+    font-weight: 600;
+}
+.dark-theme .filename-preview-card code {
+    color: #38bdf8;
+}
+
 /* Mini Roster Upload */
+
 .mini-upload {
     position: relative;
     border: 1px solid var(--border-color);

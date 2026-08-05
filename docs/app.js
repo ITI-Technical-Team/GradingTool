@@ -31,7 +31,16 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Load saved theme preference
     initTheme();
+
+    // Restore saved Course ID for Gradebook integration
+    const savedCourse = localStorage.getItem("preferred_course_id") || "";
+    const courseInput = document.getElementById("merge-course-id");
+    if (savedCourse && courseInput) {
+        courseInput.value = savedCourse;
+    }
+    updateExportFilenamePreview();
 });
+
 
 // System Time Helper
 function updateSystemTime() {
@@ -1068,6 +1077,75 @@ function recalculateMerge() {
     document.getElementById("btn-export-json-merge").disabled = false;
     
     renderMergeTable();
+    extractDayFromSlugs();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GRADEBOOK INTEGRATION HELPERS
+// ─────────────────────────────────────────────────────────────────
+
+let mergeSheetType = 'lab';
+
+window.setMergeSheetType = function(type) {
+    mergeSheetType = type;
+    const btnLab = document.getElementById("btn-type-lab");
+    const btnLec = document.getElementById("btn-type-lec");
+    if (btnLab && btnLec) {
+        btnLab.classList.toggle("active", type === 'lab');
+        btnLec.classList.toggle("active", type === 'lec');
+    }
+    updateExportFilenamePreview();
+};
+
+window.updateExportFilenamePreview = function() {
+    const courseInput = document.getElementById("merge-course-id");
+    let courseId = courseInput ? courseInput.value.trim() : "";
+    if (courseInput) {
+        localStorage.setItem("preferred_course_id", courseId);
+    }
+    if (!courseId) courseId = "Alexandria_August_2026";
+
+    const dayInput = document.getElementById("merge-day-num");
+    let dayNum = dayInput ? dayInput.value.trim() : "";
+    if (!dayNum) dayNum = "1";
+
+    const type = mergeSheetType || "lab";
+    const filename = `${courseId}-merged_day-${dayNum}-${type}-sheet`;
+
+    const previewEl = document.getElementById("export-filename-preview");
+    if (previewEl) {
+        previewEl.innerText = `${filename}.json`;
+    }
+    return filename;
+};
+
+function extractDayFromSlugs() {
+    let detectedDay = null;
+    const keys = Object.keys(uploadedMergeSheets);
+    for (const key of keys) {
+        const sheet = uploadedMergeSheets[key];
+        const textToSearch = sheet.slug || sheet.fileName || sheet.problemName || key;
+
+        // Matches lec/10/..., lab/3/..., 10/csv-reader, day-10, Day 10, d10, 10/...
+        const match = textToSearch.match(/(?:lec|lab|day|d)[\/\-_]?\s*(\d+)/i) || textToSearch.match(/^(\d+)[\/\-_]/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (detectedDay === null) {
+                detectedDay = num;
+            } else if (detectedDay !== num) {
+                detectedDay = null;
+                break;
+            }
+        }
+    }
+
+    if (detectedDay !== null) {
+        const dayInput = document.getElementById("merge-day-num");
+        if (dayInput && !dayInput.value) {
+            dayInput.value = detectedDay;
+        }
+    }
+    updateExportFilenamePreview();
 }
 
 function renderMergeTable() {
@@ -1162,7 +1240,8 @@ window.filterMergeTable = function() {
 window.exportMerged = function(format) {
     if (mergedResults.length === 0) return;
     
-    const filename = `ITI_merged_day_sheet.${format}`;
+    const baseName = updateExportFilenamePreview();
+    const filename = `${baseName}.${format}`;
     let content = "";
     let mimeType = "";
     
@@ -1193,6 +1272,7 @@ window.exportMerged = function(format) {
     
     triggerDownload(content, filename, mimeType);
 };
+
 
 // ----------------------------------------------------
 // THEME HANDLING (LIGHT / DARK TOGGLE)

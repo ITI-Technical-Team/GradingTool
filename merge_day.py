@@ -133,8 +133,10 @@ def load_roster(roster_path):
 def main():
     parser = argparse.ArgumentParser(description="Merge multiple graded problem sheets into a daily summary.")
     parser.add_argument("input_sheets", nargs="+", help="Paths to problem JSON or CSV sheets to merge.")
-    parser.add_argument("--roster", help="Path to student roster (CSV/TXT) to include students who did not submit anything.")
-    parser.add_argument("--output-prefix", default="ITI_day_sheet", help="Prefix for output files (e.g. ITI_day_sheet).")
+    parser.add_argument("--course-id", help="Course ID for Gradebook export filename prefix (e.g. Alexandria_August_2026).")
+    parser.add_argument("--day", type=int, help="Day number for Gradebook (e.g. 3).")
+    parser.add_argument("--type", choices=["lab", "lec"], default="lab", help="Sheet type for Gradebook: lab or lec (default: lab).")
+    parser.add_argument("--output-prefix", default="ITI_merged_day_sheet", help="Prefix for output files.")
     parser.add_argument("--output-dir", help="Directory to save output files. Defaults to current directory.")
     
     args = parser.parse_args()
@@ -142,6 +144,12 @@ def main():
     if not args.input_sheets:
         print("Error: Please provide at least one input sheet to merge.")
         sys.exit(1)
+
+    # Determine output filename prefix
+    if args.course_id and args.day:
+        filename_prefix = f"{args.course_id}-merged_day-{args.day}-{args.type}-sheet"
+    else:
+        filename_prefix = args.output_prefix
         
     # Read sheets
     sheets = {} # problem_name -> {username: {name, grade}}
@@ -204,8 +212,9 @@ def main():
     out_dir = args.output_dir if args.output_dir else os.getcwd()
     os.makedirs(out_dir, exist_ok=True)
     
-    csv_filename = os.path.join(out_dir, f"{args.output_prefix}.csv")
-    json_filename = os.path.join(out_dir, f"{args.output_prefix}.json")
+    csv_filename = os.path.join(out_dir, f"{filename_prefix}.csv")
+    json_filename = os.path.join(out_dir, f"{filename_prefix}.json")
+
     
     # Write CSV
     fieldnames = ["github_username", "name"] + problem_names + ["total_degree"]

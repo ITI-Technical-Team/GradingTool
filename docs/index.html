@@ -235,9 +235,32 @@
                                     <option value="3" selected>UTC +3 (Cairo Summer Time / EEST)</option>
                                     <option value="2">UTC +2 (Cairo Standard Time / EET)</option>
                                     <option value="0">UTC +0 (GMT / UTC)</option>
-                                </select>
+                        </div>
+
+                        <!-- Gradebook Export Configuration -->
+                        <div class="settings-group" style="margin-top: 0.5rem;">
+                            <label for="merge-course-id">Preferred Course Name / ID</label>
+                            <input type="text" id="merge-course-id" placeholder="e.g. Alexandria_August_2026" oninput="updateExportFilenamePreview()">
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="merge-day-num">Target Day Number</label>
+                            <input type="number" id="merge-day-num" min="1" placeholder="Auto-extracted or enter Day..." oninput="updateExportFilenamePreview()">
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Sheet Type (Gradebook Category)</label>
+                            <div class="segmented-control">
+                                <button type="button" class="segmented-btn active" id="btn-type-lab" onclick="setMergeSheetType('lab')">🧪 Lab</button>
+                                <button type="button" class="segmented-btn" id="btn-type-lec" onclick="setMergeSheetType('lec')">📘 Lecture</button>
                             </div>
                         </div>
+
+                        <div class="filename-preview-card">
+                            <span class="preview-lbl">Gradebook Export Filename:</span>
+                            <code id="export-filename-preview">Alexandria_August_2026-merged_day-1-lab-sheet.json</code>
+                        </div>
+
 
                         <div class="settings-group">
                             <label for="merge-roster-input">

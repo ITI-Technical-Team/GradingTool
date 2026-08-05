@@ -701,15 +701,17 @@ body {
     display: flex;
     gap: 0.65rem;
     align-items: flex-start;
+    width: 100%;
 }
 .asymmetric-row .col-35 {
-    width: 35%;
-    flex: 0 0 35%;
+    flex: 35;
+    min-width: 0;
 }
 .asymmetric-row .col-65 {
-    width: 65%;
-    flex: 0 0 65%;
+    flex: 65;
+    min-width: 0;
 }
+
 
 /* Collapsible Optional Accordion Drawer */
 .optional-accordion {

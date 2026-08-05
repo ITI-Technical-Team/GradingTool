@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=3.1">
+
 
 
 
@@ -230,8 +231,18 @@
                         <!-- Gradebook Export Configuration Card -->
                         <div class="gradebook-card-group">
                             <div class="card-group-header">
-                                <i data-lucide="graduation-cap" class="group-icon"></i> Gradebook Settings
+                                <div class="header-title">
+                                    <i data-lucide="graduation-cap" class="group-icon"></i> Gradebook Settings
+                                    <span class="badge-upcoming">✨ Upcoming</span>
+                                </div>
+                                <span class="info-tooltip-container">
+                                    <i data-lucide="help-circle" class="info-icon"></i>
+                                    <span class="tooltip-text">
+                                        Auto-formats export filenames to match specifications for ITI's upcoming Gradebook portal.
+                                    </span>
+                                </span>
                             </div>
+
 
                             <div class="settings-group">
                                 <label for="merge-course-id">Course ID / Name</label>

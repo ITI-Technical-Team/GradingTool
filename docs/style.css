@@ -617,12 +617,41 @@ body {
     margin-bottom: 0.65rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+.card-group-header .header-title {
+    display: flex;
+    align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
 }
 .card-group-header .group-icon {
     width: 15px;
     height: 15px;
 }
+
+/* Upcoming Feature Badge */
+.badge-upcoming {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(151, 30, 34, 0.1), rgba(225, 29, 72, 0.1));
+    border: 1px solid rgba(225, 29, 72, 0.25);
+    color: #e11d48;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.12rem 0.45rem;
+    border-radius: 20px;
+    margin-left: 0.25rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.dark-theme .badge-upcoming {
+    color: #f43f5e;
+    border-color: rgba(244, 63, 94, 0.4);
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.18), rgba(225, 29, 72, 0.18));
+}
+
 
 /* Height & Alignment Normalization */
 .mini-upload {

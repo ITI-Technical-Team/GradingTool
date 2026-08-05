@@ -673,18 +673,28 @@ body {
 .segmented-control {
     height: 38px;
     box-sizing: border-box;
+    padding: 3px;
 }
 
 /* Type Segmented Button Styling */
+.segmented-control.type-segmented {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    padding: 3px;
+}
 .type-segmented .segmented-btn {
-    font-size: 0.76rem;
-    padding: 0.3rem 0.35rem;
+    flex: 1;
+    height: 100%;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.5rem;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.2rem;
+    gap: 0.25rem;
 }
+
 
 /* Asymmetric Row (35% / 65% Column Layout) */
 .asymmetric-row {

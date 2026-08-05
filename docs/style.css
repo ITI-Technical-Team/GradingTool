@@ -334,6 +334,12 @@ body {
     }
 }
 
+.sidebar-card {
+    position: relative;
+    z-index: 10;
+}
+
+
 .card {
     border-radius: 16px;
     border: 1px solid var(--border-color);
@@ -621,15 +627,17 @@ body {
     width: 100%;
 }
 .card-group-header .header-title {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    flex-wrap: wrap;
+    white-space: nowrap;
+    flex-wrap: nowrap;
 }
 .card-group-header .group-icon {
     width: 15px;
     height: 15px;
 }
+
 
 /* Upcoming Feature Badge */
 .badge-upcoming {
@@ -1499,21 +1507,21 @@ svg.dropzone-icon {
 
 .tooltip-text {
     visibility: hidden;
-    width: 280px;
-    background-color: var(--bg-surface);
+    width: 230px;
+    background-color: var(--card-bg, #ffffff);
     color: var(--color-text);
     text-align: left;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0.75rem;
     position: absolute;
-    z-index: 100;
-    left: 130%; /* Position to the right of the icon */
+    z-index: 9999;
+    right: 130%; /* Position to the LEFT of the icon inside the sidebar */
     top: 50%;
     transform: translateY(-50%);
     opacity: 0;
     transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
     font-size: 0.75rem;
     line-height: 1.4;
     white-space: normal;
@@ -1523,22 +1531,23 @@ svg.dropzone-icon {
     -webkit-backdrop-filter: blur(12px);
 }
 
-/* Tooltip Arrow pointing to the left */
+/* Tooltip Arrow pointing to the right (towards the icon) */
 .tooltip-text::after {
     content: "";
     position: absolute;
     top: 50%;
-    right: 100%; /* At the left side of the tooltip */
+    left: 100%; /* Arrow on the right edge pointing at icon */
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent var(--border-color) transparent transparent;
+    border-color: transparent transparent transparent var(--border-color);
 }
 
 .info-tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
+
 
 /* Mobile responsive fallback (overlay above on small screens) */
 @media (max-width: 768px) {

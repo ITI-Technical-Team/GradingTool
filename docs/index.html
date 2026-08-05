@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=2.2">
+
 
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -243,49 +244,55 @@
                             </div>
                         </div>
 
-                        <!-- Gradebook Export Configuration (Compact 2-Column Rows) -->
-                        <div class="settings-row" style="margin-top: 0.25rem;">
-                            <div class="settings-group">
-                                <label for="merge-course-id">Course Name / ID</label>
-                                <input type="text" id="merge-course-id" placeholder="e.g. Alexandria_August_2026" oninput="updateExportFilenamePreview()">
+                        <!-- Gradebook Export Configuration Card -->
+                        <div class="gradebook-card-group">
+                            <div class="card-group-header">
+                                <i data-lucide="graduation-cap" class="group-icon"></i> Gradebook Settings
                             </div>
-                            <div class="settings-group">
-                                <label for="merge-day-num">Day Number</label>
-                                <input type="number" id="merge-day-num" min="1" placeholder="Day #" oninput="updateExportFilenamePreview()">
-                            </div>
-                        </div>
 
-                        <div class="settings-row">
-                            <div class="settings-group">
-                                <label>Sheet Type</label>
-                                <div class="segmented-control">
-                                    <button type="button" class="segmented-btn active" id="btn-type-lab" onclick="setMergeSheetType('lab')">🧪 Lab</button>
-                                    <button type="button" class="segmented-btn" id="btn-type-lec" onclick="setMergeSheetType('lec')">📘 Lecture</button>
+                            <div class="settings-row">
+                                <div class="settings-group">
+                                    <label for="merge-course-id">Course ID / Name</label>
+                                    <input type="text" id="merge-course-id" placeholder="e.g. CS50_Alex_2026" oninput="updateExportFilenamePreview()">
+                                </div>
+                                <div class="settings-group">
+                                    <label for="merge-day-num">Day Number</label>
+                                    <input type="number" id="merge-day-num" min="1" placeholder="Day #" oninput="updateExportFilenamePreview()">
                                 </div>
                             </div>
-                            <div class="settings-group">
-                                <label for="merge-roster-input">Upload Roster</label>
-                                <div class="mini-upload">
-                                    <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
-                                    <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose File</span>
+
+                            <div class="settings-row">
+                                <div class="settings-group">
+                                    <label>Sheet Type</label>
+                                    <div class="segmented-control type-segmented">
+                                        <button type="button" class="segmented-btn active" id="btn-type-lab" onclick="setMergeSheetType('lab')">🧪 Lab</button>
+                                        <button type="button" class="segmented-btn" id="btn-type-lec" onclick="setMergeSheetType('lec')">📘 Lecture</button>
+                                    </div>
+                                </div>
+                                <div class="settings-group">
+                                    <label for="merge-roster-input">Upload Roster</label>
+                                    <div class="mini-upload">
+                                        <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
+                                        <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose File</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="filename-preview-card">
-                            <span class="preview-lbl">Gradebook Export Filename:</span>
-                            <code id="export-filename-preview">Alexandria_August_2026-merged_day-1-lab-sheet.json</code>
+                            <div class="filename-preview-card">
+                                <span class="preview-lbl">Export Filename:</span>
+                                <code id="export-filename-preview">CS50_Alex_2026-merged_day-1-lab-sheet.json</code>
+                            </div>
                         </div>
-
 
                         <div class="action-buttons-stack">
-                            <button class="btn btn-primary" id="btn-export-csv-merge" onclick="exportMerged('csv')" disabled>
-                                <i data-lucide="git-merge" class="btn-icon"></i> Export Merged CSV
-                            </button>
-                            <button class="btn btn-secondary" id="btn-export-json-merge" onclick="exportMerged('json')" disabled>
+                            <button class="btn btn-primary" id="btn-export-json-merge" onclick="exportMerged('json')" disabled>
                                 <i data-lucide="file-json" class="btn-icon"></i> Export Merged JSON
                             </button>
+                            <button class="btn btn-secondary" id="btn-export-csv-merge" onclick="exportMerged('csv')" disabled>
+                                <i data-lucide="git-merge" class="btn-icon"></i> Export Merged CSV
+                            </button>
                         </div>
+
                     </div>
 
                     <!-- Merged Data View -->

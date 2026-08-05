@@ -596,6 +596,59 @@ body {
 }
 
 /* Gradebook Export Integration Styling */
+.gradebook-card-group {
+    background-color: rgba(151, 30, 34, 0.03);
+    border: 1px solid rgba(151, 30, 34, 0.2);
+    border-radius: 10px;
+    padding: 0.85rem 0.85rem 0.4rem 0.85rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.dark-theme .gradebook-card-group {
+    background-color: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.card-group-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    margin-bottom: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.card-group-header .group-icon {
+    width: 15px;
+    height: 15px;
+}
+
+/* Height & Alignment Normalization */
+.mini-upload {
+    height: 38px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+}
+.segmented-control {
+    height: 38px;
+    box-sizing: border-box;
+}
+
+/* Type Segmented Button Styling */
+.type-segmented .segmented-btn {
+    font-size: 0.76rem;
+    padding: 0.3rem 0.35rem;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+}
+
 .filename-preview-card {
     background-color: var(--bg-hover);
     border: 1px dashed var(--border-color);
@@ -608,6 +661,7 @@ body {
     flex-direction: column;
     gap: 0.3rem;
 }
+
 .filename-preview-card .preview-lbl {
     color: var(--color-text-muted);
     font-weight: 600;

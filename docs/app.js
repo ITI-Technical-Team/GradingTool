@@ -598,12 +598,15 @@ window.loadRosterFile = function(input, tab) {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        const text = e.target.result;
+        let text = e.target.result || "";
+        // Strip UTF-8 BOM if present from Excel CSV exports
+        text = text.replace(/^\uFEFF/, '');
+        
         const roster = {};
         const rosterOrder = [];
         
         if (file.name.endsWith('.csv')) {
-            const lines = text.split('\n');
+            const lines = text.split(/\r?\n/);
             let usernameIdx = 0;
             let nameIdx = -1;
             
@@ -623,8 +626,8 @@ window.loadRosterFile = function(input, tab) {
                     if (!line) continue;
                     const cols = line.split(',');
                     if (cols.length > usernameIdx) {
-                        const uname = cols[usernameIdx].trim();
-                        const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim() : null;
+                        const uname = cols[usernameIdx].trim().replace(/^["']|["']$/g, '');
+                        const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
                         if (uname) {
                             roster[uname] = name;
                             if (!rosterOrder.includes(uname)) {
@@ -634,6 +637,7 @@ window.loadRosterFile = function(input, tab) {
                     }
                 }
             }
+
         } else {
             // TXT file, one username per line, optionally with a comma and name
             const lines = text.split('\n');
@@ -1016,51 +1020,75 @@ function recalculateMerge() {
     }));
     mergeProblemNames = mergeProblemCols.map(c => c.problemName);
     
-    // Find union of usernames
-    const allUsernames = new Set();
+    // Case-insensitive union of usernames while preserving original display usernames
+    const usernameMap = new Map(); // lowercase -> display username
     fileKeys.forEach(k => {
         uploadedMergeSheets[k].records.forEach(rec => {
             if (rec.github_username) {
-                allUsernames.add(rec.github_username);
+                const uname = String(rec.github_username).trim();
+                const lower = uname.toLowerCase();
+                if (!usernameMap.has(lower)) {
+                    usernameMap.set(lower, uname);
+                }
             }
         });
     });
     
     if (mergeRoster) {
-        Object.keys(mergeRoster).forEach(u => allUsernames.add(u));
+        Object.keys(mergeRoster).forEach(u => {
+            const uname = String(u).trim();
+            const lower = uname.toLowerCase();
+            if (!usernameMap.has(lower)) {
+                usernameMap.set(lower, uname);
+            }
+        });
     }
+    
+    const uniqueUsernames = Array.from(usernameMap.values());
     
     // Merge grades
     mergedResults = [];
     let sortedUsernames;
     if (mergeRosterOrder && mergeRosterOrder.length > 0) {
-        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
-            const idxA = mergeRosterOrder.indexOf(a);
-            const idxB = mergeRosterOrder.indexOf(b);
+        const lowerRosterOrder = mergeRosterOrder.map(u => u.toLowerCase());
+        sortedUsernames = uniqueUsernames.sort((a, b) => {
+            const idxA = lowerRosterOrder.indexOf(a.toLowerCase());
+            const idxB = lowerRosterOrder.indexOf(b.toLowerCase());
             
             if (idxA !== -1 && idxB !== -1) {
                 return idxA - idxB;
             }
             if (idxA !== -1) return -1;
             if (idxB !== -1) return 1;
-            return a.localeCompare(b);
+            return a.localeCompare(b, undefined, { sensitivity: 'base' });
         });
     } else {
-        sortedUsernames = Array.from(allUsernames).sort();
+        sortedUsernames = uniqueUsernames.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     }
     
     sortedUsernames.forEach(username => {
+        const lowerUsername = username.toLowerCase();
+        
+        let rosterName = null;
+        if (mergeRoster) {
+            const matchingRosterKey = Object.keys(mergeRoster).find(k => k.toLowerCase() === lowerUsername);
+            if (matchingRosterKey) {
+                rosterName = mergeRoster[matchingRosterKey];
+            }
+        }
+        
         const record = {
             github_username: username,
-            name: mergeRoster ? mergeRoster[username] : null
+            name: rosterName
         };
         
         let sumGrades = 0;
         
         mergeProblemCols.forEach(col => {
             const sheet = uploadedMergeSheets[col.key];
-            const studentRec = sheet.records.find(r => r.github_username === username);
-            const grade = studentRec ? (studentRec.grade || 0) : 0;
+            const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
+            const rawGrade = studentRec ? studentRec.grade : 0;
+            const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
             
             record[col.key] = grade;
             sumGrades += grade;
@@ -1071,11 +1099,12 @@ function recalculateMerge() {
         });
         
         const n = fileKeys.length;
-        const total_degree = n > 0 ? Math.round(sumGrades / n) : 0;
-        record.total_degree = total_degree;
+        const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
+        record.total_degree = Math.max(0, Math.min(5, total_degree));
         
         mergedResults.push(record);
     });
+
     
     // Update Stats text
     document.getElementById("merged-stats-summary").innerText = `Merged ${fileKeys.length} tasks for ${mergedResults.length} distinct students.`;
@@ -1264,19 +1293,30 @@ window.exportMerged = function(format) {
     let mimeType = "";
     
     if (format === 'json') {
+        const totalCounts = {};
+        mergeProblemCols.forEach(c => totalCounts[c.problemName] = (totalCounts[c.problemName] || 0) + 1);
+        const nameTrackers = {};
+        const finalColKeys = mergeProblemCols.map(col => {
+            const name = col.problemName;
+            nameTrackers[name] = (nameTrackers[name] || 0) + 1;
+            const exportName = totalCounts[name] > 1 ? `${name} #${nameTrackers[name]}` : name;
+            return { key: col.key, exportName };
+        });
+
         const exportRecords = mergedResults.map(rec => {
             const cleanRec = {
                 github_username: rec.github_username,
                 name: rec.name
             };
-            mergeProblemCols.forEach(col => {
-                cleanRec[col.problemName] = rec[col.key] || 0;
+            finalColKeys.forEach(colInfo => {
+                cleanRec[colInfo.exportName] = rec[colInfo.key] !== undefined ? rec[colInfo.key] : 0;
             });
             cleanRec.total_degree = rec.total_degree;
             return cleanRec;
         });
         content = JSON.stringify(exportRecords, null, 2);
         mimeType = "application/json";
+
     } else {
         // CSV
         const headers = ["github_username", "name"].concat(mergeProblemCols.map(c => c.problemName)).concat(["total_degree"]);

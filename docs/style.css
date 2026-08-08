@@ -1189,7 +1189,15 @@ th.sort-desc .sort-indicator::after {
     scrollbar-color: var(--border-color) transparent;
 }
 
+.file-list::after {
+    content: "";
+    display: block;
+    height: 0.75rem;
+    flex-shrink: 0;
+}
+
 .file-list::-webkit-scrollbar {
+
     width: 6px;
 }
 .file-list::-webkit-scrollbar-track {

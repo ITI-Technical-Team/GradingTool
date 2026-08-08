@@ -1052,13 +1052,13 @@ th:hover {
     left: 0;
     z-index: 5;
     min-width: 140px;
-    background-color: var(--input-bg, #ffffff);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+    background-color: #ffffff;
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.08);
 }
 .dark-theme #merged-table th:first-child,
 .dark-theme #merged-table td:first-child {
-    background-color: #1e293b;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
+    background-color: #0f172a;
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Sticky Last Column (Total Degree) */
@@ -1067,25 +1067,26 @@ th:hover {
     position: sticky;
     right: 0;
     z-index: 5;
-    min-width: 145px;
+    min-width: 150px;
     text-align: center;
-    background-color: var(--input-bg, #ffffff);
+    background-color: #ffffff;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
 }
 .dark-theme #merged-table th:last-child,
 .dark-theme #merged-table td:last-child {
-    background-color: #1e293b;
+    background-color: #0f172a;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.4);
 }
 
 tr:hover td:first-child,
 tr:hover td:last-child {
-    background-color: var(--bg-hover, #f1f5f9);
+    background-color: #f8fafc;
 }
 .dark-theme tr:hover td:first-child,
 .dark-theme tr:hover td:last-child {
-    background-color: #334155;
+    background-color: #1e293b;
 }
+
 
 
 td {

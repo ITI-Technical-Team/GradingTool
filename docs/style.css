@@ -1026,6 +1026,15 @@ th:hover {
 #merged-table th,
 #merged-table td {
     white-space: nowrap;
+    padding: 0.75rem 0.85rem;
+}
+
+#merged-table th {
+    text-align: center;
+}
+#merged-table th:first-child,
+#merged-table th:nth-child(2) {
+    text-align: left;
 }
 
 /* Sticky First Column (GitHub Username) */
@@ -1034,13 +1043,14 @@ th:hover {
     position: sticky;
     left: 0;
     z-index: 5;
-    background-color: var(--card-bg, #ffffff);
+    min-width: 140px;
+    background-color: var(--input-bg, #ffffff);
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
 }
 .dark-theme #merged-table th:first-child,
 .dark-theme #merged-table td:first-child {
-    background-color: var(--bg-surface);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
+    background-color: #1e293b;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
 }
 
 /* Sticky Last Column (Total Degree) */
@@ -1049,19 +1059,26 @@ th:hover {
     position: sticky;
     right: 0;
     z-index: 5;
-    background-color: var(--card-bg, #ffffff);
-    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06);
+    min-width: 145px;
+    text-align: center;
+    background-color: var(--input-bg, #ffffff);
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
 }
 .dark-theme #merged-table th:last-child,
 .dark-theme #merged-table td:last-child {
-    background-color: var(--bg-surface);
-    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.25);
+    background-color: #1e293b;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.4);
 }
 
 tr:hover td:first-child,
 tr:hover td:last-child {
-    background-color: var(--input-bg);
+    background-color: var(--bg-hover, #f1f5f9);
 }
+.dark-theme tr:hover td:first-child,
+.dark-theme tr:hover td:last-child {
+    background-color: #334155;
+}
+
 
 td {
     padding: 0.75rem 1rem;

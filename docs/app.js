@@ -730,7 +730,8 @@ function triggerDownload(content, filename, mimeType) {
 // TAB 2: MERGING LOGIC
 // ----------------------------------------------------
 
-let mergeMode = 'graded'; // 'graded' or 'raw'
+let mergeMode = 'raw'; // 'raw' or 'graded'
+
 
 window.switchMergeMode = function(mode) {
     if (mode === mergeMode) return;

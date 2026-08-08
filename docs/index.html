@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=4.3">
+    <link rel="stylesheet" href="style.css?v=4.4">
+
 
 
 
@@ -52,10 +53,10 @@
 
         <!-- Navigation Tabs -->
         <nav class="app-nav">
-            <button class="nav-tab active" id="tab-btn-grade" onclick="switchTab('grade')">
+            <button class="nav-tab" id="tab-btn-grade" onclick="switchTab('grade')">
                 <i data-lucide="clipboard-check" class="tab-icon"></i> Grade Problem
             </button>
-            <button class="nav-tab" id="tab-btn-merge" onclick="switchTab('merge')">
+            <button class="nav-tab active" id="tab-btn-merge" onclick="switchTab('merge')">
                 <i data-lucide="git-merge" class="tab-icon"></i> Merge Day Tasks
             </button>
             <button class="nav-tab" id="tab-btn-help" onclick="switchTab('help')">
@@ -66,7 +67,8 @@
         <!-- Main Content Area -->
         <main class="app-main">
             <!-- TAB 1: GRADE PROBLEM -->
-            <section id="tab-content-grade" class="tab-panel active">
+            <section id="tab-content-grade" class="tab-panel">
+
                 <div class="grid-layout">
                     <!-- Config & Upload Sidebar -->
                     <div class="card glass-card sidebar-card">
@@ -208,7 +210,7 @@
             </section>
 
             <!-- TAB 2: MERGE DAY TASKS -->
-            <section id="tab-content-merge" class="tab-panel">
+            <section id="tab-content-merge" class="tab-panel active">
                 <div class="grid-layout">
                     <!-- Merge Config Sidebar -->
                     <div class="card glass-card sidebar-card">
@@ -216,20 +218,21 @@
                         
                         <!-- Segmented Mode Control -->
                         <div class="segmented-control">
-                            <button class="segmented-btn active" id="btn-merge-mode-graded" onclick="switchMergeMode('graded')">Graded Sheets</button>
-                            <button class="segmented-btn" id="btn-merge-mode-raw" onclick="switchMergeMode('raw')">Raw Submissions</button>
+                            <button class="segmented-btn" id="btn-merge-mode-graded" onclick="switchMergeMode('graded')">Graded Sheets</button>
+                            <button class="segmented-btn active" id="btn-merge-mode-raw" onclick="switchMergeMode('raw')">Raw Submissions</button>
                         </div>
 
-                        <p class="card-desc" id="merge-description">Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.</p>
+                        <p class="card-desc" id="merge-description">Upload multiple raw submissions (JSON) to dynamically grade and merge them into a single day grade.</p>
 
                         <div class="dropzone" id="merge-dropzone">
                             <input type="file" id="merge-file-input" accept=".json" class="file-input" multiple>
                             <div class="dropzone-prompt">
                                 <i data-lucide="upload-cloud" class="dropzone-icon"></i>
                                 <span class="dropzone-text">Drag & drop multiple files or <strong>browse</strong></span>
-                                <span class="dropzone-sub" id="merge-dropzone-sub">Accepts ITI_problem_sheet.json files</span>
+                                <span class="dropzone-sub" id="merge-dropzone-sub">Accepts raw submissions JSON files</span>
                             </div>
                         </div>
+
 
                         <div class="settings-group">
                             <label>Uploaded Problem Sheets</label>
@@ -289,8 +292,9 @@
                                     </div>
                                 </div>
 
-                                <!-- Dynamic settings shown only in Raw Mode -->
-                                <div id="merge-raw-settings" class="hidden-settings hidden">
+                                <!-- Dynamic settings shown in Raw Mode -->
+                                <div id="merge-raw-settings" class="hidden-settings">
+
                                     <div class="settings-group">
                                         <label for="merge-deadline">Submission Deadline</label>
                                         <input type="text" id="merge-deadline" placeholder="Set deadline (Optional)..." onfocus="(this.type='datetime-local')" onblur="if(!this.value)this.type='text'" onchange="recalculateMerge()">

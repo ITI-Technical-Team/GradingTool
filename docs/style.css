@@ -963,10 +963,23 @@ body {
     width: 100%;
     display: block;
     overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
     border: 1px solid var(--border-color);
     border-radius: 12px;
     background-color: var(--panel-bg);
     box-sizing: border-box;
+}
+
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+.table-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.table-container::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
 }
 
 table {
@@ -987,6 +1000,7 @@ th {
     user-select: none;
     transition: var(--transition-smooth);
     vertical-align: middle;
+    white-space: nowrap;
 }
 
 th:hover {
@@ -1003,6 +1017,52 @@ th:hover {
 #grade-table th:nth-child(6) { width: 10%; }
 #grade-table th:nth-child(7) { width: 22%; }
 
+/* Merged Table Sticky Pinning & Formatting */
+#merged-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#merged-table th,
+#merged-table td {
+    white-space: nowrap;
+}
+
+/* Sticky First Column (GitHub Username) */
+#merged-table th:first-child,
+#merged-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background-color: var(--card-bg, #ffffff);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+}
+.dark-theme #merged-table th:first-child,
+.dark-theme #merged-table td:first-child {
+    background-color: var(--bg-surface);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Sticky Last Column (Total Degree) */
+#merged-table th:last-child,
+#merged-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background-color: var(--card-bg, #ffffff);
+    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06);
+}
+.dark-theme #merged-table th:last-child,
+.dark-theme #merged-table td:last-child {
+    background-color: var(--bg-surface);
+    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.25);
+}
+
+tr:hover td:first-child,
+tr:hover td:last-child {
+    background-color: var(--input-bg);
+}
+
 td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
@@ -1017,6 +1077,7 @@ tr:last-child td {
 tr:hover td {
     background-color: var(--input-bg);
 }
+
 
 .empty-row {
     text-align: center;

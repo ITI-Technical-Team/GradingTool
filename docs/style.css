@@ -323,10 +323,11 @@ body {
 /* Cards & Layout */
 .grid-layout {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 340px minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
 }
+
 
 @media (max-width: 992px) {
     .grid-layout {
@@ -872,7 +873,14 @@ body {
 }
 
 /* Data View Card (Right Side) */
+.data-card {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 .data-header {
+
     display: flex;
     justify-content: space-between;
     align-items: center;

@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=4.9">
+    <link rel="stylesheet" href="style.css?v=5.0">
+
 
 
 
@@ -401,8 +402,40 @@
 
         <!-- Footer -->
         <footer class="app-footer">
-            <p>&copy; 2026 ITI Technical Team. Grade Processor made with visual excellence.</p>
+            <div class="footer-container">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <i data-lucide="graduation-cap" class="footer-icon"></i>
+                        <span>ITI CS50 Grade Processor</span>
+                    </div>
+                    <p class="footer-tagline">Automated problem grading, submission merging, and Gradebook integration tool designed for ITI CS50 instruction.</p>
+                </div>
+
+                <div class="footer-links-group">
+                    <div class="footer-col">
+                        <h4>Navigation</h4>
+                        <ul>
+                            <li><a href="#" onclick="switchTab('merge'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="git-merge" class="link-icon"></i> Merge Day Tasks</a></li>
+                            <li><a href="#" onclick="switchTab('grade'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="clipboard-check" class="link-icon"></i> Grade Single Problem</a></li>
+                            <li><a href="#" onclick="switchTab('help'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="terminal" class="link-icon"></i> CLI Scripts Guide</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Repository</h4>
+                        <ul>
+                            <li><a href="https://github.com/ITI-Technical-Team/GradingTool" target="_blank" rel="noopener"><i data-lucide="github" class="link-icon"></i> GitHub Source Code</a></li>
+                            <li><a href="https://github.com/ITI-Technical-Team/GradingTool/issues" target="_blank" rel="noopener"><i data-lucide="bug" class="link-icon"></i> Report Issue</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Information Technology Institute (ITI). Built for CS50 Course Management.</p>
+            </div>
         </footer>
+
     </div>
 
     <!-- JavaScript Logic -->

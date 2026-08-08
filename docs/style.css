@@ -1346,14 +1346,102 @@ th.sort-desc .sort-indicator::after {
 
 /* Footer */
 .app-footer {
-    margin-top: auto;
-    padding-top: 3rem;
-    padding-bottom: 1rem;
+    margin-top: 4rem;
+    padding: 3rem 0 1.5rem 0;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.footer-brand {
+    max-width: 420px;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.6rem;
+}
+
+.footer-logo .footer-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--primary);
+}
+
+.footer-tagline {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+}
+
+.footer-links-group {
+    display: flex;
+    gap: 3.5rem;
+    flex-wrap: wrap;
+}
+
+.footer-col h4 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    margin-bottom: 0.85rem;
+}
+
+.footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-col a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: var(--transition-smooth);
+    font-size: 0.85rem;
+}
+
+.footer-col a:hover {
+    color: var(--color-text);
+}
+
+.footer-col .link-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-muted);
+}
+
+.footer-col a:hover .link-icon {
+    color: var(--primary);
+}
+
+.footer-bottom {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
     text-align: center;
     font-size: 0.8rem;
     color: var(--color-text-muted);
-    border-top: 1px solid var(--border-color);
 }
+
 
 /* Utils */
 .hidden {

@@ -135,14 +135,22 @@
                                 <input type="file" id="grade-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'grade')">
                                 <span class="mini-upload-btn" id="grade-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>
                             </div>
-                            <div class="roster-options-container" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-secondary);">
+                            <div class="roster-options-container">
+                                <label class="toggle-row">
                                     <input type="checkbox" id="grade-strict-roster" checked onchange="recalculateGrade()">
-                                    <span>Strict Roster Only (Exclude non-roster submissions)</span>
+                                    <span class="toggle-row-text">
+                                        <span class="toggle-row-label">Strict Roster Only</span>
+                                        <span class="toggle-row-desc">Exclude submissions from non-roster students</span>
+                                    </span>
+                                    <span class="toggle-switch"></span>
                                 </label>
-                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-secondary);">
+                                <label class="toggle-row">
                                     <input type="checkbox" id="grade-preserve-empty-rows" checked onchange="recalculateGrade()">
-                                    <span>Preserve Blank Roster Rows (for Excel alignment)</span>
+                                    <span class="toggle-row-text">
+                                        <span class="toggle-row-label">Preserve Blank Rows</span>
+                                        <span class="toggle-row-desc">Keep empty roster lines for 1-to-1 Excel alignment</span>
+                                    </span>
+                                    <span class="toggle-switch"></span>
                                 </label>
                             </div>
                         </div>
@@ -309,14 +317,22 @@
                                         <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
                                         <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File</span>
                                     </div>
-                                    <div class="roster-options-container" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-secondary);">
+                                    <div class="roster-options-container">
+                                        <label class="toggle-row">
                                             <input type="checkbox" id="merge-strict-roster" checked onchange="recalculateMerge()">
-                                            <span>Strict Roster Only (Exclude non-roster submissions)</span>
+                                            <span class="toggle-row-text">
+                                                <span class="toggle-row-label">Strict Roster Only</span>
+                                                <span class="toggle-row-desc">Exclude submissions from non-roster students</span>
+                                            </span>
+                                            <span class="toggle-switch"></span>
                                         </label>
-                                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-secondary);">
+                                        <label class="toggle-row">
                                             <input type="checkbox" id="merge-preserve-empty-rows" checked onchange="recalculateMerge()">
-                                            <span>Preserve Blank Roster Rows (for Excel alignment)</span>
+                                            <span class="toggle-row-text">
+                                                <span class="toggle-row-label">Preserve Blank Rows</span>
+                                                <span class="toggle-row-desc">Keep empty roster lines for 1-to-1 Excel alignment</span>
+                                            </span>
+                                            <span class="toggle-switch"></span>
                                         </label>
                                     </div>
                                 </div>

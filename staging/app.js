@@ -3,12 +3,15 @@ let rawProblemData = null; // Raw parsed JSON from grade file
 let selectedSlug = "";
 let studentRoster = null; // Roster from grade tab
 let studentRosterOrder = []; // Ordered list of usernames from grade roster file
+let studentRosterDetails = []; // Full list of roster entry objects [{ id, username, name, isBlank }]
 let rosterFileName = "";
 let gradedResults = []; // Currently graded and filtered results
 let sortDirection = {}; // Column sort states
 
 let mergeRoster = null; // Roster from merge tab
 let mergeRosterOrder = []; // Ordered list of usernames from merge roster file
+let mergeRosterDetails = []; // Full list of merge roster entry objects [{ id, username, name, isBlank }]
+
 let mergeRosterFileName = "";
 let uploadedMergeSheets = {}; // filename -> { problemName, records: [ { github_username, name, grade } ] }
 let mergedResults = []; // Currently merged results
@@ -612,6 +615,7 @@ window.loadRosterFile = function(input, tab) {
         
         const roster = {};
         const rosterOrder = [];
+        const rosterDetails = [];
         
         if (file.name.endsWith('.csv')) {
             const lines = text.split(/\r?\n/);
@@ -630,18 +634,26 @@ window.loadRosterFile = function(input, tab) {
                 });
                 
                 for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    const cols = line.split(',');
-                    if (cols.length > usernameIdx) {
-                        const uname = cols[usernameIdx].trim().replace(/^["']|["']$/g, '');
-                        const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
-                        if (uname) {
-                            roster[uname] = name;
-                            if (!rosterOrder.includes(uname)) {
-                                rosterOrder.push(uname);
-                            }
+                    const rawLine = lines[i];
+                    if (rawLine === undefined || rawLine === null) continue;
+                    const line = rawLine.trim();
+                    if (!line && i === lines.length - 1) continue; // Skip trailing empty line at EOF
+                    
+                    const cols = rawLine.split(',');
+                    const uname = cols.length > usernameIdx ? cols[usernameIdx].trim().replace(/^["']|["']$/g, '') : '';
+                    const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
+                    
+                    if (uname) {
+                        roster[uname] = name;
+                        if (!rosterOrder.includes(uname)) {
+                            rosterOrder.push(uname);
                         }
+                        rosterDetails.push({ id: uname, username: uname, name: name, isBlank: false });
+                    } else {
+                        // Preserved blank username row for Excel 1-to-1 row alignment
+                        const rowName = name || `Roster Row #${i}`;
+                        const rowId = `__blank_row_${i}`;
+                        rosterDetails.push({ id: rowId, username: '', name: rowName, isBlank: true });
                     }
                 }
             }
@@ -649,20 +661,21 @@ window.loadRosterFile = function(input, tab) {
         } else {
             // TXT file, one username per line, optionally with a comma and name
             const lines = text.split('\n');
-            lines.forEach(line => {
-                line = line.trim();
-                if (!line || line.startsWith('#')) return;
-                const parts = line.split(',');
+            lines.forEach((line, i) => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) return;
+                const parts = trimmed.split(',');
                 const uname = parts[0].trim();
+                const name = parts.length >= 2 ? parts[1].trim() : null;
                 if (uname) {
-                    if (parts.length >= 2) {
-                        roster[uname] = parts[1].trim();
-                    } else {
-                        roster[uname] = null;
-                    }
+                    roster[uname] = name;
                     if (!rosterOrder.includes(uname)) {
                         rosterOrder.push(uname);
                     }
+                    rosterDetails.push({ id: uname, username: uname, name: name, isBlank: false });
+                } else {
+                    const rowName = name || `Roster Row #${i + 1}`;
+                    rosterDetails.push({ id: `__blank_row_${i+1}`, username: '', name: rowName, isBlank: true });
                 }
             });
         }
@@ -670,6 +683,7 @@ window.loadRosterFile = function(input, tab) {
         if (tab === 'grade') {
             studentRoster = roster;
             studentRosterOrder = rosterOrder;
+            studentRosterDetails = rosterDetails;
             sortDirection = {}; // Clear manual sorting so it defaults to the new roster order
             rosterFileName = file.name;
             document.getElementById("grade-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
@@ -678,6 +692,7 @@ window.loadRosterFile = function(input, tab) {
         } else {
             mergeRoster = roster;
             mergeRosterOrder = rosterOrder;
+            mergeRosterDetails = rosterDetails;
             mergeRosterFileName = file.name;
             document.getElementById("merge-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
             lucide.createIcons();
@@ -686,6 +701,7 @@ window.loadRosterFile = function(input, tab) {
     };
     reader.readAsText(file);
 };
+
 
 // Export Functionality
 window.exportGraded = function(format) {
@@ -777,7 +793,7 @@ window.switchMergeMode = function(mode) {
     lucide.createIcons();
 };
 
-function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
+function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster, rosterDetailsParam, strictRosterParam, preserveEmptyParam) {
     const submissions = rawDict[slug] || [];
     let deadlineDate = null;
     if (deadlineVal) {
@@ -796,16 +812,16 @@ function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
         }
         
         sub._parsed_time = subTime;
-        if (!grouped[username]) {
-            grouped[username] = [];
+        const lower = username.toLowerCase();
+        if (!grouped[lower]) {
+            grouped[lower] = [];
         }
-        grouped[username].push(sub);
+        grouped[lower].push(sub);
     });
     
     const graded = {};
-    Object.keys(grouped).forEach(username => {
-        const subs = grouped[username];
-        // Sort: checks_passed desc, time desc
+    Object.keys(grouped).forEach(lowerUname => {
+        const subs = grouped[lowerUname];
         subs.sort((a, b) => {
             const cpA = a.checks_passed || 0;
             const cpB = b.checks_passed || 0;
@@ -815,71 +831,142 @@ function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
             const ptB = b._parsed_time ? b._parsed_time.getTime() : 0;
             return ptB - ptA;
         });
-        graded[username] = subs[0];
+        graded[lowerUname] = subs[0];
     });
+
+    const rDetails = rosterDetailsParam || (studentRosterDetails && studentRosterDetails.length > 0 ? studentRosterDetails : null);
     
-    // Union of all usernames (submissions + roster)
-    const allUsernames = new Set();
-    submissions.forEach(sub => {
-        if (sub.github_username) {
-            allUsernames.add(sub.github_username);
-        }
-    });
-    if (roster) {
-        Object.keys(roster).forEach(u => allUsernames.add(u));
-    }
+    const strictEl = typeof document !== 'undefined' ? document.getElementById("grade-strict-roster") : null;
+    const preserveEl = typeof document !== 'undefined' ? document.getElementById("grade-preserve-empty-rows") : null;
     
+    const strictRoster = strictRosterParam !== undefined ? strictRosterParam : (rDetails ? (strictEl ? strictEl.checked : true) : false);
+    const preserveEmpty = preserveEmptyParam !== undefined ? preserveEmptyParam : (rDetails ? (preserveEl ? preserveEl.checked : true) : false);
+
     const results = [];
-    let sortedUsernames;
-    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
-        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
-            const idxA = mergeRosterOrder.indexOf(a);
-            const idxB = mergeRosterOrder.indexOf(b);
-            
-            if (idxA !== -1 && idxB !== -1) {
-                return idxA - idxB;
+    const processedUsernames = new Set();
+
+    if (rDetails && rDetails.length > 0) {
+        rDetails.forEach(entry => {
+            if (entry.isBlank) {
+                if (preserveEmpty) {
+                    results.push({
+                        github_username: "",
+                        name: entry.name,
+                        checks_passed: 0,
+                        checks_run: 0,
+                        grade: 0,
+                        style50_score: null,
+                        timestamp: "No submission",
+                        github_url: null,
+                        _isBlank: true
+                    });
+                }
+            } else {
+                const username = entry.username;
+                const lowerUname = username.toLowerCase();
+                processedUsernames.add(lowerUname);
+
+                const record = {
+                    github_username: username,
+                    name: roster ? (roster[username] || roster[lowerUname] || entry.name) : entry.name,
+                    checks_passed: 0,
+                    checks_run: 0,
+                    grade: 0,
+                    style50_score: null,
+                    timestamp: "No submission",
+                    github_url: null
+                };
+
+                if (graded[lowerUname]) {
+                    const sub = graded[lowerUname];
+                    const checks_passed = sub.checks_passed || 0;
+                    const checks_run = sub.checks_run || 0;
+                    let grade = 0;
+                    if (checks_run > 0) {
+                        grade = Math.round((checks_passed / checks_run) * 5);
+                    }
+                    record.name = sub.name || record.name;
+                    record.checks_passed = checks_passed;
+                    record.checks_run = checks_run;
+                    record.grade = grade;
+                    record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
+                    record.timestamp = sub.timestamp;
+                    record.github_url = sub.github_url;
+                }
+                results.push(record);
             }
-            if (idxA !== -1) return -1;
-            if (idxB !== -1) return 1;
-            return a.localeCompare(b);
         });
-    } else {
-        sortedUsernames = Array.from(allUsernames).sort();
-    }
-    sortedUsernames.forEach(username => {
-        const record = {
-            github_username: username,
-            name: roster ? roster[username] : null,
-            checks_passed: 0,
-            checks_run: 0,
-            grade: 0,
-            style50_score: null,
-            timestamp: "No submission",
-            github_url: null
-        };
-        
-        if (graded[username]) {
-            const sub = graded[username];
-            const checks_passed = sub.checks_passed || 0;
-            const checks_run = sub.checks_run || 0;
-            let grade = 0;
-            if (checks_run > 0) {
-                grade = Math.round((checks_passed / checks_run) * 5);
-            }
-            
-            record.name = sub.name || record.name;
-            record.checks_passed = checks_passed;
-            record.checks_run = checks_run;
-            record.grade = grade;
-            record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
-            record.timestamp = sub.timestamp;
-            record.github_url = sub.github_url;
+
+        if (!strictRoster) {
+            submissions.forEach(sub => {
+                if (sub.github_username) {
+                    const lower = sub.github_username.toLowerCase();
+                    if (!processedUsernames.has(lower)) {
+                        processedUsernames.add(lower);
+                        const record = {
+                            github_username: sub.github_username,
+                            name: sub.name || null,
+                            checks_passed: sub.checks_passed || 0,
+                            checks_run: sub.checks_run || 0,
+                            grade: sub.checks_run ? Math.round(((sub.checks_passed || 0) / sub.checks_run) * 5) : 0,
+                            style50_score: sub.style50_score !== undefined ? sub.style50_score : null,
+                            timestamp: sub.timestamp,
+                            github_url: sub.github_url
+                        };
+                        results.push(record);
+                    }
+                }
+            });
         }
-        results.push(record);
-    });
-    
+    } else {
+        // No roster provided -> standard processing of all submissions
+        const allUsernames = new Set();
+        submissions.forEach(sub => {
+            if (sub.github_username) {
+                allUsernames.add(sub.github_username);
+            }
+        });
+        if (roster) {
+            Object.keys(roster).forEach(u => allUsernames.add(u));
+        }
+        
+        const sortedUsernames = Array.from(allUsernames).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        
+        sortedUsernames.forEach(username => {
+            const lowerUname = username.toLowerCase();
+            const record = {
+                github_username: username,
+                name: roster ? roster[username] : null,
+                checks_passed: 0,
+                checks_run: 0,
+                grade: 0,
+                style50_score: null,
+                timestamp: "No submission",
+                github_url: null
+            };
+            if (graded[lowerUname]) {
+                const sub = graded[lowerUname];
+                const checks_passed = sub.checks_passed || 0;
+                const checks_run = sub.checks_run || 0;
+                let grade = 0;
+                if (checks_run > 0) {
+                    grade = Math.round((checks_passed / checks_run) * 5);
+                }
+                record.name = sub.name || record.name;
+                record.checks_passed = checks_passed;
+                record.checks_run = checks_run;
+                record.grade = grade;
+                record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
+                record.timestamp = sub.timestamp;
+                record.github_url = sub.github_url;
+            }
+            results.push(record);
+        });
+    }
+
     return results;
 }
+
 
 function handleMergeFiles(files) {
     let loadedCount = 0;
@@ -992,31 +1079,48 @@ function renderMergeFileList() {
 function recalculateMerge() {
     const fileKeys = Object.keys(uploadedMergeSheets);
     if (fileKeys.length === 0) {
-        document.getElementById("btn-export-csv-merge").disabled = true;
-        document.getElementById("btn-export-json-merge").disabled = true;
-        document.getElementById("merged-stats-summary").innerText = "Upload graded JSON sheets to merge.";
-        
-        // Reset table headers & body
-        document.getElementById("merged-table-header").innerHTML = `
-            <th>GitHub Username</th>
-            <th>Student Name</th>
-            <th>Total Degree (Avg)</th>
-        `;
-        document.querySelector("#merged-table tbody").innerHTML = `
-            <tr class="empty-row">
-                <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
-            </tr>
-        `;
+        if (typeof document !== 'undefined') {
+            const btnCsv = document.getElementById("btn-export-csv-merge");
+            const btnJson = document.getElementById("btn-export-json-merge");
+            if (btnCsv) btnCsv.disabled = true;
+            if (btnJson) btnJson.disabled = true;
+            const statsEl = document.getElementById("merged-stats-summary");
+            if (statsEl) statsEl.innerText = "Upload graded JSON sheets to merge.";
+            
+            const headerRow = document.getElementById("merged-table-header");
+            if (headerRow) {
+                headerRow.innerHTML = `
+                    <th>GitHub Username</th>
+                    <th>Student Name</th>
+                    <th>Total Degree (Avg)</th>
+                `;
+            }
+            const tbody = document.querySelector("#merged-table tbody");
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr class="empty-row">
+                        <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
+                    </tr>
+                `;
+            }
+        }
         return;
     }
     
+    const strictEl = typeof document !== 'undefined' ? document.getElementById("merge-strict-roster") : null;
+    const preserveEl = typeof document !== 'undefined' ? document.getElementById("merge-preserve-empty-rows") : null;
+    
+    const hasRoster = mergeRosterDetails && mergeRosterDetails.length > 0;
+    const strictRoster = hasRoster ? (strictEl ? strictEl.checked : true) : false;
+    const preserveEmpty = hasRoster ? (preserveEl ? preserveEl.checked : true) : false;
+
     // Dynamically grade raw sheets if we are in raw mode
     if (mergeMode === 'raw') {
-        const deadlineVal = document.getElementById("merge-deadline") ? document.getElementById("merge-deadline").value : "";
+        const deadlineVal = typeof document !== 'undefined' && document.getElementById("merge-deadline") ? document.getElementById("merge-deadline").value : "";
         fileKeys.forEach(k => {
             const sheet = uploadedMergeSheets[k];
             if (sheet.isRaw) {
-                sheet.records = gradeRawSlugSubmissions(sheet.rawData, sheet.slug, deadlineVal, mergeRoster);
+                sheet.records = gradeRawSlugSubmissions(sheet.rawData, sheet.slug, deadlineVal, mergeRoster, mergeRosterDetails, strictRoster, preserveEmpty);
             }
         });
     }
@@ -1028,102 +1132,153 @@ function recalculateMerge() {
     }));
     mergeProblemNames = mergeProblemCols.map(c => c.problemName);
     
-    // Case-insensitive union of usernames while preserving original display usernames
-    const usernameMap = new Map(); // lowercase -> display username
-    fileKeys.forEach(k => {
-        uploadedMergeSheets[k].records.forEach(rec => {
-            if (rec.github_username) {
-                const uname = String(rec.github_username).trim();
-                const lower = uname.toLowerCase();
-                if (!usernameMap.has(lower)) {
-                    usernameMap.set(lower, uname);
-                }
-            }
-        });
-    });
-    
-    if (mergeRoster) {
-        Object.keys(mergeRoster).forEach(u => {
-            const uname = String(u).trim();
-            const lower = uname.toLowerCase();
-            if (!usernameMap.has(lower)) {
-                usernameMap.set(lower, uname);
-            }
-        });
-    }
-    
-    const uniqueUsernames = Array.from(usernameMap.values());
-    
-    // Merge grades
     mergedResults = [];
-    let sortedUsernames;
-    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
-        const lowerRosterOrder = mergeRosterOrder.map(u => u.toLowerCase());
-        sortedUsernames = uniqueUsernames.sort((a, b) => {
-            const idxA = lowerRosterOrder.indexOf(a.toLowerCase());
-            const idxB = lowerRosterOrder.indexOf(b.toLowerCase());
-            
-            if (idxA !== -1 && idxB !== -1) {
-                return idxA - idxB;
-            }
-            if (idxA !== -1) return -1;
-            if (idxB !== -1) return 1;
-            return a.localeCompare(b, undefined, { sensitivity: 'base' });
-        });
-    } else {
-        sortedUsernames = uniqueUsernames.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    }
+    const processedUsernames = new Set();
     
-    sortedUsernames.forEach(username => {
-        const lowerUsername = username.toLowerCase();
-        
-        let rosterName = null;
-        if (mergeRoster) {
-            const matchingRosterKey = Object.keys(mergeRoster).find(k => k.toLowerCase() === lowerUsername);
-            if (matchingRosterKey) {
-                rosterName = mergeRoster[matchingRosterKey];
+    if (hasRoster) {
+        mergeRosterDetails.forEach(entry => {
+            if (entry.isBlank) {
+                if (preserveEmpty) {
+                    const record = {
+                        github_username: "",
+                        name: entry.name,
+                        _isBlank: true
+                    };
+                    mergeProblemCols.forEach(col => {
+                        record[col.key] = 0;
+                    });
+                    record.total_degree = 0;
+                    mergedResults.push(record);
+                }
+            } else {
+                const username = entry.username;
+                const lowerUsername = username.toLowerCase();
+                processedUsernames.add(lowerUsername);
+                
+                let rosterName = mergeRoster ? (mergeRoster[username] || mergeRoster[lowerUsername] || entry.name) : entry.name;
+                const record = {
+                    github_username: username,
+                    name: rosterName
+                };
+                
+                let sumGrades = 0;
+                mergeProblemCols.forEach(col => {
+                    const sheet = uploadedMergeSheets[col.key];
+                    const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
+                    const rawGrade = studentRec ? studentRec.grade : 0;
+                    const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
+                    
+                    record[col.key] = grade;
+                    sumGrades += grade;
+                    
+                    if (!record.name && studentRec && studentRec.name) {
+                        record.name = studentRec.name;
+                    }
+                });
+                
+                const n = fileKeys.length;
+                const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
+                record.total_degree = Math.max(0, Math.min(5, total_degree));
+                mergedResults.push(record);
             }
+        });
+        
+        if (!strictRoster) {
+            const extraUsernames = new Map();
+            fileKeys.forEach(k => {
+                uploadedMergeSheets[k].records.forEach(rec => {
+                    if (rec.github_username) {
+                        const uname = String(rec.github_username).trim();
+                        const lower = uname.toLowerCase();
+                        if (!processedUsernames.has(lower) && !extraUsernames.has(lower)) {
+                            extraUsernames.set(lower, uname);
+                        }
+                    }
+                });
+            });
+            
+            const sortedExtra = Array.from(extraUsernames.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            sortedExtra.forEach(username => {
+                const lowerUsername = username.toLowerCase();
+                const record = {
+                    github_username: username,
+                    name: null
+                };
+                let sumGrades = 0;
+                mergeProblemCols.forEach(col => {
+                    const sheet = uploadedMergeSheets[col.key];
+                    const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
+                    const rawGrade = studentRec ? studentRec.grade : 0;
+                    const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
+                    
+                    record[col.key] = grade;
+                    sumGrades += grade;
+                    
+                    if (!record.name && studentRec && studentRec.name) {
+                        record.name = studentRec.name;
+                    }
+                });
+                
+                const n = fileKeys.length;
+                const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
+                record.total_degree = Math.max(0, Math.min(5, total_degree));
+                mergedResults.push(record);
+            });
         }
-        
-        const record = {
-            github_username: username,
-            name: rosterName
-        };
-        
-        let sumGrades = 0;
-        
-        mergeProblemCols.forEach(col => {
-            const sheet = uploadedMergeSheets[col.key];
-            const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
-            const rawGrade = studentRec ? studentRec.grade : 0;
-            const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
-            
-            record[col.key] = grade;
-            sumGrades += grade;
-            
-            if (!record.name && studentRec && studentRec.name) {
-                record.name = studentRec.name;
-            }
+    } else {
+        const usernameMap = new Map();
+        fileKeys.forEach(k => {
+            uploadedMergeSheets[k].records.forEach(rec => {
+                if (rec.github_username) {
+                    const uname = String(rec.github_username).trim();
+                    const lower = uname.toLowerCase();
+                    if (!usernameMap.has(lower)) {
+                        usernameMap.set(lower, uname);
+                    }
+                }
+            });
         });
         
-        const n = fileKeys.length;
-        const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
-        record.total_degree = Math.max(0, Math.min(5, total_degree));
-        
-        mergedResults.push(record);
-    });
+        const sortedUsernames = Array.from(usernameMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        sortedUsernames.forEach(username => {
+            const lowerUsername = username.toLowerCase();
+            const record = {
+                github_username: username,
+                name: null
+            };
+            let sumGrades = 0;
+            mergeProblemCols.forEach(col => {
+                const sheet = uploadedMergeSheets[col.key];
+                const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
+                const rawGrade = studentRec ? studentRec.grade : 0;
+                const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
+                
+                record[col.key] = grade;
+                sumGrades += grade;
+                
+                if (!record.name && studentRec && studentRec.name) {
+                    record.name = studentRec.name;
+                }
+            });
+            const n = fileKeys.length;
+            const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
+            record.total_degree = Math.max(0, Math.min(5, total_degree));
+            mergedResults.push(record);
+        });
+    }
 
-    
-    // Update Stats text
-    document.getElementById("merged-stats-summary").innerText = `Merged ${fileKeys.length} tasks for ${mergedResults.length} distinct students.`;
-    
-    // Enable Exports
-    document.getElementById("btn-export-csv-merge").disabled = false;
-    document.getElementById("btn-export-json-merge").disabled = false;
-    
-    renderMergeTable();
-    extractDayFromSlugs();
+    if (typeof document !== 'undefined') {
+        const statsEl = document.getElementById("merged-stats-summary");
+        if (statsEl) statsEl.innerText = `Merged ${fileKeys.length} tasks for ${mergedResults.length} distinct roster/student rows.`;
+        const btnCsv = document.getElementById("btn-export-csv-merge");
+        const btnJson = document.getElementById("btn-export-json-merge");
+        if (btnCsv) btnCsv.disabled = false;
+        if (btnJson) btnJson.disabled = false;
+        renderMergeTable();
+        extractDayFromSlugs();
+    }
 }
+
 
 // ─────────────────────────────────────────────────────────────────
 // GRADEBOOK INTEGRATION HELPERS

@@ -1,7 +1,76 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { monthNames, parseSubmissionTimestamp, gradeRawSlugSubmissions } = require('../docs/app.js');
+const { monthNames, parseSubmissionTimestamp, gradeRawSlugSubmissions, parseRosterText } = require('../docs/app.js');
+
+// ──────────────────────────────────────────────
+// parseRosterText — TXT file parsing
+// ──────────────────────────────────────────────
+
+test('parseRosterText TXT - parses normal usernames', () => {
+    const txt = 'rwanaboellil19-create\nnourhanmohammed314\n';
+    const { rosterDetails } = parseRosterText(txt, 'roster.txt');
+    assert.equal(rosterDetails.length, 2);
+    assert.equal(rosterDetails[0].username, 'rwanaboellil19-create');
+    assert.equal(rosterDetails[0].isBlank, false);
+    assert.equal(rosterDetails[1].username, 'nourhanmohammed314');
+    assert.equal(rosterDetails[1].isBlank, false);
+});
+
+test('parseRosterText TXT - preserves blank lines in the middle (your roster (Copy).txt case)', () => {
+    // Mirrors: rwanaboellil19-create \n \n \n nourhanmohammed314 \n \n
+    const txt = 'rwanaboellil19-create\n\n\nnourhanmohammed314\n\n';
+    const { rosterDetails } = parseRosterText(txt, 'roster.txt');
+
+    assert.equal(rosterDetails.length, 4, 'Should have 4 rows: user, blank, blank, user (trailing \\n is EOF, skipped)');
+    assert.equal(rosterDetails[0].username, 'rwanaboellil19-create');
+    assert.equal(rosterDetails[0].isBlank, false);
+
+    assert.equal(rosterDetails[1].username, '', 'Row 2 should be blank row');
+    assert.equal(rosterDetails[1].isBlank, true);
+
+    assert.equal(rosterDetails[2].username, '', 'Row 3 should be blank row');
+    assert.equal(rosterDetails[2].isBlank, true);
+
+    assert.equal(rosterDetails[3].username, 'nourhanmohammed314');
+    assert.equal(rosterDetails[3].isBlank, false);
+});
+
+test('parseRosterText TXT - skips # comment lines', () => {
+    const txt = '# this is a comment\nstudent_1\n';
+    const { rosterDetails } = parseRosterText(txt, 'roster.txt');
+    assert.equal(rosterDetails.length, 1);
+    assert.equal(rosterDetails[0].username, 'student_1');
+});
+
+test('parseRosterText TXT - strips UTF-8 BOM', () => {
+    const txt = '\uFEFFstudent_1\nstudent_2\n';
+    const { rosterDetails } = parseRosterText(txt, 'roster.txt');
+    assert.equal(rosterDetails[0].username, 'student_1', 'BOM should be stripped from first username');
+});
+
+// ──────────────────────────────────────────────
+// parseRosterText — CSV file parsing
+// ──────────────────────────────────────────────
+
+test('parseRosterText CSV - parses headers and data rows correctly', () => {
+    const csv = 'github_username,name\nstudent_1,Student One\nstudent_2,Student Two\n';
+    const { roster, rosterDetails } = parseRosterText(csv, 'roster.csv');
+    assert.equal(rosterDetails.length, 2);
+    assert.equal(rosterDetails[0].username, 'student_1');
+    assert.equal(rosterDetails[0].name, 'Student One');
+    assert.equal(roster['student_1'], 'Student One');
+});
+
+test('parseRosterText CSV - preserves blank username rows (missing github username)', () => {
+    const csv = 'github_username,name\nstudent_1,Student One\n,Jane No Username\nstudent_3,Student Three\n';
+    const { rosterDetails } = parseRosterText(csv, 'roster.csv');
+    assert.equal(rosterDetails.length, 3);
+    assert.equal(rosterDetails[1].isBlank, true);
+    assert.equal(rosterDetails[1].name, 'Jane No Username');
+    assert.equal(rosterDetails[1].grade, undefined); // grade set by gradeRawSlugSubmissions, not parser
+});
+
 
 test('parseSubmissionTimestamp - parses standard EEST timestamp strings correctly', () => {
     const ts = 'Wed, 22 Jul 2026 02:22:20PM EEST';

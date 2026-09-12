@@ -602,71 +602,41 @@ window.clearGradeSearch = function() {
     window.clearSearch('grade');
 };
 
-// Roster upload files parsing
-window.loadRosterFile = function(input, tab) {
-    const file = input.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        let text = e.target.result || "";
-        // Strip UTF-8 BOM if present from Excel CSV exports
-        text = text.replace(/^\uFEFF/, '');
-        
-        const roster = {};
-        const rosterOrder = [];
-        const rosterDetails = [];
-        
-        if (file.name.endsWith('.csv')) {
-            const lines = text.split(/\r?\n/);
-            let usernameIdx = 0;
-            let nameIdx = -1;
-            
-            if (lines.length > 0) {
-                const header = lines[0].split(',');
-                header.forEach((col, idx) => {
-                    const colLower = col.toLowerCase().trim();
-                    if (colLower.includes('username') || colLower.includes('github')) {
-                        usernameIdx = idx;
-                    } else if (colLower.includes('name')) {
-                        nameIdx = idx;
-                    }
-                });
-                
-                for (let i = 1; i < lines.length; i++) {
-                    const rawLine = lines[i];
-                    if (rawLine === undefined || rawLine === null) continue;
-                    const line = rawLine.trim();
-                    if (!line && i === lines.length - 1) continue; // Skip trailing empty line at EOF
-                    
-                    const cols = rawLine.split(',');
-                    const uname = cols.length > usernameIdx ? cols[usernameIdx].trim().replace(/^["']|["']$/g, '') : '';
-                    const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
-                    
-                    if (uname) {
-                        roster[uname] = name;
-                        if (!rosterOrder.includes(uname)) {
-                            rosterOrder.push(uname);
-                        }
-                        rosterDetails.push({ id: uname, username: uname, name: name, isBlank: false });
-                    } else {
-                        // Preserved blank username row for Excel 1-to-1 row alignment
-                        const rowName = name || `Roster Row #${i}`;
-                        const rowId = `__blank_row_${i}`;
-                        rosterDetails.push({ id: rowId, username: '', name: rowName, isBlank: true });
-                    }
-                }
-            }
+// Pure roster parsing function - also exported for unit testing
+function parseRosterText(text, filename) {
+    // Strip UTF-8 BOM if present from Excel CSV exports
+    text = text.replace(/^\uFEFF/, '');
 
-        } else {
-            // TXT file, one username per line, optionally with a comma and name
-            const lines = text.split('\n');
-            lines.forEach((line, i) => {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith('#')) return;
-                const parts = trimmed.split(',');
-                const uname = parts[0].trim();
-                const name = parts.length >= 2 ? parts[1].trim() : null;
+    const roster = {};
+    const rosterOrder = [];
+    const rosterDetails = [];
+
+    if (filename.endsWith('.csv')) {
+        const lines = text.split(/\r?\n/);
+        let usernameIdx = 0;
+        let nameIdx = -1;
+
+        if (lines.length > 0) {
+            const header = lines[0].split(',');
+            header.forEach((col, idx) => {
+                const colLower = col.toLowerCase().trim();
+                if (colLower.includes('username') || colLower.includes('github')) {
+                    usernameIdx = idx;
+                } else if (colLower.includes('name')) {
+                    nameIdx = idx;
+                }
+            });
+
+            for (let i = 1; i < lines.length; i++) {
+                const rawLine = lines[i];
+                if (rawLine === undefined || rawLine === null) continue;
+                const line = rawLine.trim();
+                if (!line && i === lines.length - 1) continue; // Skip trailing empty line at EOF
+
+                const cols = rawLine.split(',');
+                const uname = cols.length > usernameIdx ? cols[usernameIdx].trim().replace(/^["']|["']$/g, '') : '';
+                const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
+
                 if (uname) {
                     roster[uname] = name;
                     if (!rosterOrder.includes(uname)) {
@@ -674,11 +644,55 @@ window.loadRosterFile = function(input, tab) {
                     }
                     rosterDetails.push({ id: uname, username: uname, name: name, isBlank: false });
                 } else {
-                    const rowName = name || `Roster Row #${i + 1}`;
-                    rosterDetails.push({ id: `__blank_row_${i+1}`, username: '', name: rowName, isBlank: true });
+                    // Preserved blank username row for Excel 1-to-1 row alignment
+                    const rowName = name || `Roster Row #${i}`;
+                    const rowId = `__blank_row_${i}`;
+                    rosterDetails.push({ id: rowId, username: '', name: rowName, isBlank: true });
                 }
-            });
+            }
         }
+
+    } else {
+        // TXT file, one username per line, optionally with a comma and name
+        let lines = text.split('\n');
+        // Strip trailing blank lines at EOF (text editors add \n at end, resulting in empty strings)
+        while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+            lines.pop();
+        }
+        lines.forEach((line, i) => {
+            const trimmed = line.trim();
+            // Skip comment lines
+            if (trimmed.startsWith('#')) return;
+
+            const parts = trimmed.split(',');
+            const uname = parts[0].trim();
+            const name = parts.length >= 2 ? parts[1].trim() : null;
+            if (uname) {
+                roster[uname] = name;
+                if (!rosterOrder.includes(uname)) {
+                    rosterOrder.push(uname);
+                }
+                rosterDetails.push({ id: uname, username: uname, name: name, isBlank: false });
+            } else {
+                // Blank line → preserved for Excel 1-to-1 row alignment
+                rosterDetails.push({ id: `__blank_row_${i+1}`, username: '', name: '', isBlank: true });
+            }
+        });
+    }
+
+
+    return { roster, rosterOrder, rosterDetails };
+}
+
+// Roster upload files parsing
+window.loadRosterFile = function(input, tab) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result || "";
+        const { roster, rosterOrder, rosterDetails } = parseRosterText(text, file.name);
         
         if (tab === 'grade') {
             studentRoster = roster;
@@ -701,6 +715,7 @@ window.loadRosterFile = function(input, tab) {
     };
     reader.readAsText(file);
 };
+
 
 
 // Export Functionality
@@ -1544,7 +1559,8 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         monthNames,
         parseSubmissionTimestamp,
-        gradeRawSlugSubmissions
+        gradeRawSlugSubmissions,
+        parseRosterText
     };
 }
 

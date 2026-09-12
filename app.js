@@ -1,0 +1,1396 @@
+// State Variables
+let rawProblemData = null; // Raw parsed JSON from grade file
+let selectedSlug = "";
+let studentRoster = null; // Roster from grade tab
+let studentRosterOrder = []; // Ordered list of usernames from grade roster file
+let rosterFileName = "";
+let gradedResults = []; // Currently graded and filtered results
+let sortDirection = {}; // Column sort states
+
+let mergeRoster = null; // Roster from merge tab
+let mergeRosterOrder = []; // Ordered list of usernames from merge roster file
+let mergeRosterFileName = "";
+let uploadedMergeSheets = {}; // filename -> { problemName, records: [ { github_username, name, grade } ] }
+let mergedResults = []; // Currently merged results
+let mergeProblemNames = []; // Column names for problems
+let mergeProblemCols = []; // Column metadata with unique keys
+
+
+const monthNames = {
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+};
+
+// Environment Guard for Node.js test runner vs Browser
+if (typeof global !== 'undefined' && typeof window === 'undefined') {
+    global.window = global;
+}
+
+// Initialize
+if (typeof document !== 'undefined') {
+    document.addEventListener("DOMContentLoaded", () => {
+        // Setup file dropzones
+        setupDropzone("grade-dropzone", "grade-file-input", handleGradeFile);
+        setupDropzone("merge-dropzone", "merge-file-input", handleMergeFiles);
+        
+        // Add real-time clock update (Cairo time helper)
+        updateSystemTime();
+        setInterval(updateSystemTime, 60000);
+        
+        // Load saved theme preference
+        initTheme();
+
+        // Restore saved Course ID for Gradebook integration
+        const savedCourse = localStorage.getItem("preferred_course_id") || "";
+        const courseInput = document.getElementById("merge-course-id");
+        if (savedCourse && courseInput) {
+            courseInput.value = savedCourse;
+        }
+        updateExportFilenamePreview();
+    });
+}
+
+
+
+// System Time Helper
+function updateSystemTime() {
+    const timeEl = document.getElementById("system-time");
+    const now = new Date();
+    // Format UTC+3 (Cairo Summer Time) or similar
+    const options = { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: true };
+    const timeStr = now.toLocaleTimeString('en-US', options);
+    timeEl.innerText = `Cairo Time: ${timeStr}`;
+}
+
+// Switch navigation tabs
+window.switchTab = function(tabId) {
+    document.querySelectorAll(".nav-tab").forEach(tab => tab.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+    
+    const activeTab = document.getElementById(`tab-btn-${tabId}`);
+    const activePanel = document.getElementById(`tab-content-${tabId}`);
+    
+    if (activeTab) activeTab.classList.add("active");
+    if (activePanel) activePanel.classList.add("active");
+};
+
+// Setup Dropzones
+function setupDropzone(zoneId, inputId, handler) {
+    const dropzone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    
+    dropzone.addEventListener("click", () => input.click());
+    
+    dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+    });
+    
+    dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("dragover");
+    });
+    
+    dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) {
+            input.files = e.dataTransfer.files;
+            handler(e.dataTransfer.files);
+        }
+    });
+    
+    input.addEventListener("change", () => {
+        if (input.files.length > 0) {
+            handler(input.files);
+        }
+    });
+}
+
+// ----------------------------------------------------
+// TAB 1: GRADING LOGIC
+// ----------------------------------------------------
+
+function handleGradeFile(files) {
+    const file = files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (typeof data !== 'object') {
+                alert("Invalid JSON structure. Root must be a dictionary.");
+                return;
+            }
+            
+            rawProblemData = data;
+            
+            // Update UI
+            document.getElementById("grade-file-info").classList.remove("hidden");
+            document.getElementById("grade-uploaded-filename").innerText = file.name;
+            document.getElementById("grade-dropzone").classList.add("hidden");
+            
+            // Populate Slugs Dropdown
+            const select = document.getElementById("grade-slug-select");
+            select.innerHTML = "";
+            
+            const slugs = Object.keys(data);
+            slugs.forEach(slug => {
+                const opt = document.createElement("option");
+                opt.value = slug;
+                opt.innerText = slug;
+                select.appendChild(opt);
+            });
+            
+            if (slugs.length > 0) {
+                selectedSlug = slugs[0];
+                recalculateGrade();
+            }
+        } catch (err) {
+            alert("Error parsing JSON: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+window.clearGradeFile = function() {
+    rawProblemData = null;
+    selectedSlug = "";
+    gradedResults = [];
+    activeGradeFilter = null;
+    document.getElementById("grade-file-input").value = "";
+    document.getElementById("grade-file-info").classList.add("hidden");
+    document.getElementById("grade-dropzone").classList.remove("hidden");
+    document.getElementById("grade-slug-select").innerHTML = '<option value="">No file loaded</option>';
+    document.getElementById("grade-stats-grid").classList.add("hidden");
+    document.getElementById("grade-chart-card").classList.add("hidden");
+    document.getElementById("btn-export-csv-grade").disabled = true;
+    document.getElementById("btn-export-json-grade").disabled = true;
+    
+    // Clear Table
+    const tbody = document.querySelector("#grade-table tbody");
+    tbody.innerHTML = `
+        <tr class="empty-row">
+            <td colspan="7">No submissions processed yet. Please upload a JSON file to get started.</td>
+        </tr>
+    `;
+};
+
+window.onGradeSlugChange = function() {
+    selectedSlug = document.getElementById("grade-slug-select").value;
+    recalculateGrade();
+};
+
+// Date Parsing Helper
+function parseSubmissionTimestamp(tsStr) {
+    if (!tsStr) return null;
+    tsStr = tsStr.trim();
+    // Wed, 22 Jul 2026 02:22:20PM EEST
+    const match = tsStr.match(/^(\w+),\s+(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)(AM|PM)\s+(\w+)$/);
+    if (match) {
+        const [_, dayOfWeek, day, monthName, year, hourStr, minute, second, amPm, tz] = match;
+        let hour = parseInt(hourStr);
+        if (amPm === 'PM' && hour < 12) hour += 12;
+        if (amPm === 'AM' && hour === 12) hour = 0;
+        
+        return new Date(parseInt(year), monthNames[monthName], parseInt(day), hour, parseInt(minute), parseInt(second));
+    }
+    
+    const parsed = Date.parse(tsStr);
+    if (!isNaN(parsed)) {
+        return new Date(parsed);
+    }
+    return null;
+}
+
+window.recalculateGrade = function() {
+    if (!rawProblemData || !selectedSlug) return;
+    
+    const submissions = rawProblemData[selectedSlug] || [];
+    const deadlineVal = document.getElementById("grade-deadline").value;
+    let deadlineDate = null;
+    if (deadlineVal) {
+        deadlineDate = new Date(deadlineVal);
+    }
+    
+    // Group and find best submissions
+    const grouped = {};
+    submissions.forEach(sub => {
+        const username = sub.github_username;
+        if (!username) return;
+        
+        const subTime = parseSubmissionTimestamp(sub.timestamp);
+        if (deadlineDate && subTime && subTime > deadlineDate) {
+            return; // Skip submission after deadline
+        }
+        
+        sub._parsed_time = subTime;
+        
+        if (!grouped[username]) {
+            grouped[username] = [];
+        }
+        grouped[username].push(sub);
+    });
+    
+    const graded = {};
+    Object.keys(grouped).forEach(username => {
+        const subs = grouped[username];
+        // Sort: checks_passed desc, time desc
+        subs.sort((a, b) => {
+            const cpA = a.checks_passed || 0;
+            const cpB = b.checks_passed || 0;
+            if (cpA !== cpB) return cpB - cpA;
+            
+            const ptA = a._parsed_time ? a._parsed_time.getTime() : 0;
+            const ptB = b._parsed_time ? b._parsed_time.getTime() : 0;
+            return ptB - ptA;
+        });
+        graded[username] = subs[0];
+    });
+    
+    // Build Output List
+    gradedResults = [];
+    const allUsernames = new Set();
+    submissions.forEach(sub => {
+        if (sub.github_username) {
+            allUsernames.add(sub.github_username);
+        }
+    });
+    if (studentRoster) {
+        Object.keys(studentRoster).forEach(u => allUsernames.add(u));
+    }
+    
+    let totalGradeSum = 0;
+    let submittedCount = 0;
+    
+    let sortedUsernames;
+    if (studentRosterOrder && studentRosterOrder.length > 0) {
+        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
+            const idxA = studentRosterOrder.indexOf(a);
+            const idxB = studentRosterOrder.indexOf(b);
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB; // Both in roster, preserve roster order
+            }
+            if (idxA !== -1) return -1; // Roster students first
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b); // Non-roster students sorted alphabetically at the end
+        });
+    } else {
+        sortedUsernames = Array.from(allUsernames).sort();
+    }
+    sortedUsernames.forEach(username => {
+        const record = {
+            github_username: username,
+            name: studentRoster ? studentRoster[username] : null,
+            checks_passed: 0,
+            checks_run: 0,
+            grade: 0,
+            style50_score: null,
+            timestamp: "No submission",
+            github_url: null
+        };
+        
+        if (graded[username]) {
+            const sub = graded[username];
+            const checks_passed = sub.checks_passed || 0;
+            const checks_run = sub.checks_run || 0;
+            let grade = 0;
+            if (checks_run > 0) {
+                grade = Math.round((checks_passed / checks_run) * 5);
+            }
+            
+            record.name = sub.name || record.name;
+            record.checks_passed = checks_passed;
+            record.checks_run = checks_run;
+            record.grade = grade;
+            record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
+            record.timestamp = sub.timestamp;
+            record.github_url = sub.github_url;
+            
+            totalGradeSum += grade;
+            submittedCount++;
+        }
+        
+        gradedResults.push(record);
+    });
+    
+    // Update Stats Summary
+    const totalCount = gradedResults.length;
+    const noSubmitCount = totalCount - submittedCount;
+    const avgGrade = submittedCount > 0 ? (totalGradeSum / submittedCount).toFixed(1) : "0.0";
+    
+    document.getElementById("stat-total-students").innerText = totalCount;
+    document.getElementById("stat-submitted").innerText = submittedCount;
+    document.getElementById("stat-no-submit").innerText = noSubmitCount;
+    document.getElementById("stat-average-grade").innerText = avgGrade;
+    document.getElementById("grade-stats-grid").classList.remove("hidden");
+    
+    const probName = selectedSlug.split("/").pop() || "problem";
+    document.getElementById("graded-title").innerText = `Graded: ${probName}`;
+    document.getElementById("graded-stats-summary").innerText = `${submittedCount}/${totalCount} students submitted before deadline.`;
+    
+    // Enable Exports
+    document.getElementById("btn-export-csv-grade").disabled = false;
+    document.getElementById("btn-export-json-grade").disabled = false;
+    
+    renderGradeTable();
+    updateDistributionChart(gradedResults);
+};
+
+let activeGradeFilter = null;
+
+function renderGradeTable() {
+    const tbody = document.querySelector("#grade-table tbody");
+    tbody.innerHTML = "";
+    
+    let displayResults = gradedResults;
+    if (activeGradeFilter !== null) {
+        displayResults = gradedResults.filter(r => {
+            const g = r.timestamp === "No submission" ? 0 : r.grade;
+            return g === activeGradeFilter;
+        });
+    }
+    
+    if (displayResults.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-row">
+                <td colspan="7">No results match the current filters.</td>
+            </tr>
+        `;
+        return;
+    }
+    
+    displayResults.forEach(rec => {
+        const tr = document.createElement("tr");
+        if (rec.timestamp === "No submission") {
+            tr.className = "row-absent";
+        }
+        
+        // Github username cell
+        const tdUser = document.createElement("td");
+        tdUser.className = "github-username-cell";
+        tdUser.innerText = rec.github_username;
+        tr.appendChild(tdUser);
+        
+        // Real name cell
+        const tdName = document.createElement("td");
+        tdName.className = "real-name-cell";
+        if (rec.name) {
+            tdName.innerText = rec.name;
+        } else {
+            const span = document.createElement("span");
+            span.className = "dimmed-dash";
+            span.innerText = "—";
+            tdName.appendChild(span);
+        }
+        tr.appendChild(tdName);
+        
+        // Checks passed
+        const tdPassed = document.createElement("td");
+        tdPassed.innerText = rec.timestamp !== "No submission" ? rec.checks_passed : "-";
+        tr.appendChild(tdPassed);
+        
+        // Checks run
+        const tdRun = document.createElement("td");
+        tdRun.innerText = rec.timestamp !== "No submission" ? rec.checks_run : "-";
+        tr.appendChild(tdRun);
+        
+        // Grade badge
+        const tdGrade = document.createElement("td");
+        const badge = document.createElement("span");
+        if (rec.timestamp !== "No submission") {
+            badge.className = `grade-badge grade-${rec.grade}`;
+            badge.innerText = rec.grade;
+        } else {
+            badge.className = "grade-badge grade-0";
+            badge.innerText = "0";
+        }
+        tdGrade.appendChild(badge);
+        tr.appendChild(tdGrade);
+        
+        // Style score
+        const tdStyle = document.createElement("td");
+        tdStyle.innerText = (rec.style50_score !== null && rec.style50_score !== undefined) 
+            ? (rec.style50_score * 100).toFixed(0) + "%" 
+            : "-";
+        tr.appendChild(tdStyle);
+        
+        // Date timestamp / Link
+        const tdTime = document.createElement("td");
+        if (rec.github_url) {
+            const link = document.createElement("a");
+            link.href = rec.github_url;
+            link.target = "_blank";
+            link.className = "github-url-link";
+            link.innerHTML = `${rec.timestamp} <i data-lucide="external-link" class="ext-link-icon"></i>`;
+            tdTime.appendChild(link);
+        } else {
+            tdTime.innerText = rec.timestamp;
+            if (rec.timestamp === "No submission") {
+                tdTime.className = "text-warning";
+            }
+        }
+        tr.appendChild(tdTime);
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+}
+
+window.filterGradeTable = function() {
+    const query = document.getElementById("grade-search").value.toLowerCase();
+    const clearBtn = document.getElementById("grade-search-clear");
+    if (query) {
+        clearBtn.classList.remove("hidden");
+    } else {
+        clearBtn.classList.add("hidden");
+    }
+    
+    const rows = document.querySelectorAll("#grade-table tbody tr");
+    rows.forEach(row => {
+        if (row.classList.contains("empty-row")) return;
+        const text = row.innerText.toLowerCase();
+        if (text.includes(query)) {
+            row.classList.remove("hidden");
+        } else {
+            row.classList.add("hidden");
+        }
+    });
+};
+
+window.clearSearch = function(tab) {
+    const input = document.getElementById(`${tab}-search`);
+    input.value = "";
+    if (tab === 'grade') {
+        const clearBtn = document.getElementById("grade-search-clear");
+        clearBtn.classList.add("hidden");
+        filterGradeTable();
+    } else {
+        const clearBtn = document.getElementById("merge-search-clear");
+        clearBtn.classList.add("hidden");
+        filterMergeTable();
+    }
+};
+
+function updateDistributionChart(records) {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 };
+    let maxCount = 0;
+    
+    records.forEach(rec => {
+        const grade = rec.timestamp === "No submission" ? 0 : (rec.grade || 0);
+        counts[grade] = (counts[grade] || 0) + 1;
+    });
+    
+    Object.values(counts).forEach(val => {
+        if (val > maxCount) maxCount = val;
+    });
+    
+    const chartCard = document.getElementById("grade-chart-card");
+    const barsContainer = document.getElementById("grade-chart-bars");
+    
+    if (records.length === 0) {
+        chartCard.classList.add("hidden");
+        return;
+    }
+    
+    chartCard.classList.remove("hidden");
+    barsContainer.innerHTML = "";
+    
+    [0, 1, 2, 3, 4, 5].forEach(grade => {
+        const count = counts[grade] || 0;
+        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        
+        const wrapper = document.createElement("div");
+        wrapper.className = "chart-bar-wrapper";
+        if (activeGradeFilter === grade) {
+            wrapper.classList.add("active");
+        }
+        
+        const barContainer = document.createElement("div");
+        barContainer.className = "chart-bar-container";
+        
+        const bar = document.createElement("div");
+        bar.className = `chart-bar grade-bar-${grade}`;
+        bar.style.height = `${percentage}%`;
+        bar.onclick = () => filterTableByGrade(grade);
+        
+        if (count > 0) {
+            const valSpan = document.createElement("span");
+            valSpan.className = "chart-bar-value";
+            valSpan.innerText = count;
+            bar.appendChild(valSpan);
+        }
+        
+        barContainer.appendChild(bar);
+        
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "chart-bar-label";
+        labelSpan.innerText = `G${grade}`;
+        
+        wrapper.appendChild(barContainer);
+        wrapper.appendChild(labelSpan);
+        barsContainer.appendChild(wrapper);
+    });
+    
+    const clearBtn = document.getElementById("btn-clear-grade-filter");
+    if (activeGradeFilter !== null) {
+        clearBtn.classList.remove("hidden");
+    } else {
+        clearBtn.classList.add("hidden");
+    }
+}
+
+window.filterTableByGrade = function(grade) {
+    if (activeGradeFilter === grade) {
+        activeGradeFilter = null;
+    } else {
+        activeGradeFilter = grade;
+    }
+    renderGradeTable();
+    updateDistributionChart(gradedResults);
+};
+
+window.clearGradeFilter = function() {
+    activeGradeFilter = null;
+    renderGradeTable();
+    updateDistributionChart(gradedResults);
+};
+
+window.sortGradeTable = function(columnKey) {
+    // Determine sort direction
+    const currentDir = sortDirection[columnKey] || 'asc';
+    const nextDir = currentDir === 'asc' ? 'desc' : 'asc';
+    sortDirection[columnKey] = nextDir;
+    
+    // Update headers indicators
+    const headers = document.querySelectorAll("#grade-table th");
+    headers.forEach(h => {
+        h.classList.remove("sort-asc", "sort-desc");
+    });
+    
+    // Find header
+    const colIdx = {
+        'github_username': 0, 'name': 1, 'checks_passed': 2,
+        'checks_run': 3, 'grade': 4, 'style50_score': 5, 'timestamp': 6
+    }[columnKey];
+    headers[colIdx].classList.add(nextDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    
+    // Sort logic
+    gradedResults.sort((a, b) => {
+        let valA = a[columnKey];
+        let valB = b[columnKey];
+        
+        // Handle Null values in sorting
+        if (valA === null || valA === undefined || valA === "No submission") valA = nextDir === 'asc' ? Infinity : -Infinity;
+        if (valB === null || valB === undefined || valB === "No submission") valB = nextDir === 'asc' ? Infinity : -Infinity;
+        
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return nextDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else {
+            return nextDir === 'asc' ? (valA - valB) : (valB - valA);
+        }
+    });
+    
+    renderGradeTable();
+};
+
+window.sortTable = window.sortGradeTable;
+window.clearGradeSearch = function() {
+    window.clearSearch('grade');
+};
+
+// Roster upload files parsing
+window.loadRosterFile = function(input, tab) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let text = e.target.result || "";
+        // Strip UTF-8 BOM if present from Excel CSV exports
+        text = text.replace(/^\uFEFF/, '');
+        
+        const roster = {};
+        const rosterOrder = [];
+        
+        if (file.name.endsWith('.csv')) {
+            const lines = text.split(/\r?\n/);
+            let usernameIdx = 0;
+            let nameIdx = -1;
+            
+            if (lines.length > 0) {
+                const header = lines[0].split(',');
+                header.forEach((col, idx) => {
+                    const colLower = col.toLowerCase().trim();
+                    if (colLower.includes('username') || colLower.includes('github')) {
+                        usernameIdx = idx;
+                    } else if (colLower.includes('name')) {
+                        nameIdx = idx;
+                    }
+                });
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    const cols = line.split(',');
+                    if (cols.length > usernameIdx) {
+                        const uname = cols[usernameIdx].trim().replace(/^["']|["']$/g, '');
+                        const name = nameIdx !== -1 && cols.length > nameIdx ? cols[nameIdx].trim().replace(/^["']|["']$/g, '') : null;
+                        if (uname) {
+                            roster[uname] = name;
+                            if (!rosterOrder.includes(uname)) {
+                                rosterOrder.push(uname);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            // TXT file, one username per line, optionally with a comma and name
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('#')) return;
+                const parts = line.split(',');
+                const uname = parts[0].trim();
+                if (uname) {
+                    if (parts.length >= 2) {
+                        roster[uname] = parts[1].trim();
+                    } else {
+                        roster[uname] = null;
+                    }
+                    if (!rosterOrder.includes(uname)) {
+                        rosterOrder.push(uname);
+                    }
+                }
+            });
+        }
+        
+        if (tab === 'grade') {
+            studentRoster = roster;
+            studentRosterOrder = rosterOrder;
+            sortDirection = {}; // Clear manual sorting so it defaults to the new roster order
+            rosterFileName = file.name;
+            document.getElementById("grade-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
+            lucide.createIcons();
+            recalculateGrade();
+        } else {
+            mergeRoster = roster;
+            mergeRosterOrder = rosterOrder;
+            mergeRosterFileName = file.name;
+            document.getElementById("merge-roster-status").innerHTML = `<i data-lucide="check-circle-2" class="btn-icon text-success"></i> Roster: ${file.name}`;
+            lucide.createIcons();
+            recalculateMerge();
+        }
+    };
+    reader.readAsText(file);
+};
+
+// Export Functionality
+window.exportGraded = function(format) {
+    if (gradedResults.length === 0) return;
+    
+    const probName = selectedSlug.split("/").pop() || "problem";
+    const filename = `ITI_${probName}_sheet.${format}`;
+    let content = "";
+    let mimeType = "";
+    
+    if (format === 'json') {
+        content = JSON.stringify(gradedResults, null, 2);
+        mimeType = "application/json";
+    } else {
+        // CSV
+        const headers = ["github_username", "name", "checks_passed", "checks_run", "grade", "style50_score", "timestamp", "github_url"];
+        const rows = [headers.join(",")];
+        
+        gradedResults.forEach(rec => {
+            const line = headers.map(key => {
+                let val = rec[key];
+                if (val === null || val === undefined) val = "";
+                // Escape quotes
+                val = String(val).replace(/"/g, '""');
+                // Wrap in quotes if needed
+                if (val.includes(",") || val.includes("\n") || val.includes('"')) {
+                    val = `"${val}"`;
+                }
+                return val;
+            });
+            rows.push(line.join(","));
+        });
+        content = rows.join("\n");
+        mimeType = "text/csv";
+    }
+    
+    triggerDownload(content, filename, mimeType);
+};
+
+function triggerDownload(content, filename, mimeType) {
+    const blobContent = mimeType === "text/csv" ? ["\uFEFF", content] : [content];
+    const blob = new Blob(blobContent, { type: `${mimeType};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ----------------------------------------------------
+// TAB 2: MERGING LOGIC
+// ----------------------------------------------------
+
+let mergeMode = 'raw'; // 'raw' or 'graded'
+
+
+window.switchMergeMode = function(mode) {
+    if (mode === mergeMode) return;
+    mergeMode = mode;
+    
+    // Toggle active buttons and show/hide settings
+    const btnGraded = document.getElementById("btn-merge-mode-graded");
+    const btnRaw = document.getElementById("btn-merge-mode-raw");
+    const rawSettings = document.getElementById("merge-raw-settings");
+    const mergeDesc = document.getElementById("merge-description");
+    const dropzoneSub = document.getElementById("merge-dropzone-sub");
+    
+    // Reset file drawer to avoid confusion
+    uploadedMergeSheets = {};
+    renderMergeFileList();
+    recalculateMerge();
+    
+    if (mode === 'raw') {
+        if (btnGraded) btnGraded.classList.remove("active");
+        if (btnRaw) btnRaw.classList.add("active");
+        if (rawSettings) rawSettings.classList.remove("hidden");
+        if (mergeDesc) mergeDesc.innerText = "Upload multiple raw submissions (JSON) to dynamically grade and merge them into a single day grade.";
+        if (dropzoneSub) dropzoneSub.innerText = "Accepts raw submissions JSON files";
+    } else {
+        if (btnGraded) btnGraded.classList.add("active");
+        if (btnRaw) btnRaw.classList.remove("active");
+        if (rawSettings) rawSettings.classList.add("hidden");
+        if (mergeDesc) mergeDesc.innerText = "Upload multiple graded sheets (JSON files exported from Step 1) to merge them into a single day grade.";
+        if (dropzoneSub) dropzoneSub.innerText = "Accepts ITI_problem_sheet.json files";
+    }
+    lucide.createIcons();
+};
+
+function gradeRawSlugSubmissions(rawDict, slug, deadlineVal, roster) {
+    const submissions = rawDict[slug] || [];
+    let deadlineDate = null;
+    if (deadlineVal) {
+        deadlineDate = new Date(deadlineVal);
+    }
+    
+    // Group and find best submissions before deadline
+    const grouped = {};
+    submissions.forEach(sub => {
+        const username = sub.github_username;
+        if (!username) return;
+        
+        const subTime = parseSubmissionTimestamp(sub.timestamp);
+        if (deadlineDate && subTime && subTime > deadlineDate) {
+            return; // Skip submission after deadline
+        }
+        
+        sub._parsed_time = subTime;
+        if (!grouped[username]) {
+            grouped[username] = [];
+        }
+        grouped[username].push(sub);
+    });
+    
+    const graded = {};
+    Object.keys(grouped).forEach(username => {
+        const subs = grouped[username];
+        // Sort: checks_passed desc, time desc
+        subs.sort((a, b) => {
+            const cpA = a.checks_passed || 0;
+            const cpB = b.checks_passed || 0;
+            if (cpA !== cpB) return cpB - cpA;
+            
+            const ptA = a._parsed_time ? a._parsed_time.getTime() : 0;
+            const ptB = b._parsed_time ? b._parsed_time.getTime() : 0;
+            return ptB - ptA;
+        });
+        graded[username] = subs[0];
+    });
+    
+    // Union of all usernames (submissions + roster)
+    const allUsernames = new Set();
+    submissions.forEach(sub => {
+        if (sub.github_username) {
+            allUsernames.add(sub.github_username);
+        }
+    });
+    if (roster) {
+        Object.keys(roster).forEach(u => allUsernames.add(u));
+    }
+    
+    const results = [];
+    let sortedUsernames;
+    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
+        sortedUsernames = Array.from(allUsernames).sort((a, b) => {
+            const idxA = mergeRosterOrder.indexOf(a);
+            const idxB = mergeRosterOrder.indexOf(b);
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB;
+            }
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    } else {
+        sortedUsernames = Array.from(allUsernames).sort();
+    }
+    sortedUsernames.forEach(username => {
+        const record = {
+            github_username: username,
+            name: roster ? roster[username] : null,
+            checks_passed: 0,
+            checks_run: 0,
+            grade: 0,
+            style50_score: null,
+            timestamp: "No submission",
+            github_url: null
+        };
+        
+        if (graded[username]) {
+            const sub = graded[username];
+            const checks_passed = sub.checks_passed || 0;
+            const checks_run = sub.checks_run || 0;
+            let grade = 0;
+            if (checks_run > 0) {
+                grade = Math.round((checks_passed / checks_run) * 5);
+            }
+            
+            record.name = sub.name || record.name;
+            record.checks_passed = checks_passed;
+            record.checks_run = checks_run;
+            record.grade = grade;
+            record.style50_score = sub.style50_score !== undefined ? sub.style50_score : null;
+            record.timestamp = sub.timestamp;
+            record.github_url = sub.github_url;
+        }
+        results.push(record);
+    });
+    
+    return results;
+}
+
+function handleMergeFiles(files) {
+    let loadedCount = 0;
+    
+    Array.from(files).forEach(file => {
+        if (!file.name.endsWith('.json')) {
+            alert(`File ${file.name} is not a JSON file. Skipped.`);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                
+                if (mergeMode === 'graded') {
+                    if (!Array.isArray(parsed)) {
+                        alert(`Invalid structure in ${file.name}. You are in 'Graded Sheets' mode, but this file contains raw submissions. Please switch to 'Raw Submissions' mode.`);
+                        return;
+                    }
+                    
+                    let probName = file.name;
+                    const match = file.name.match(/^ITI_(.+)_sheet\.json$/);
+                    if (match) {
+                        probName = match[1];
+                    } else {
+                        probName = file.name.replace(".json", "");
+                    }
+                    
+                    uploadedMergeSheets[file.name] = {
+                        isRaw: false,
+                        problemName: probName,
+                        records: parsed
+                    };
+                } else {
+                    // Raw mode
+                    if (Array.isArray(parsed) || typeof parsed !== 'object' || parsed === null) {
+                        alert(`Invalid structure in ${file.name}. You are in 'Raw Submissions' mode, but this file contains already graded sheets. Please switch to 'Graded Sheets' mode.`);
+                        return;
+                    }
+                    
+                    const slugs = Object.keys(parsed);
+                    if (slugs.length === 0) {
+                        alert(`No problem slugs found in raw file ${file.name}.`);
+                        return;
+                    }
+                    
+                    slugs.forEach(slug => {
+                        const cleanName = slug.split("/").pop() || slug;
+                        const uniqueKey = `${file.name}::${slug}`;
+                        
+                        uploadedMergeSheets[uniqueKey] = {
+                            isRaw: true,
+                            rawData: parsed,
+                            slug: slug,
+                            problemName: cleanName,
+                            fileName: file.name
+                        };
+                    });
+                }
+                
+                loadedCount++;
+                if (loadedCount === files.length) {
+                    renderMergeFileList();
+                    recalculateMerge();
+                }
+            } catch (err) {
+                alert(`Error parsing JSON file ${file.name}: ` + err.message);
+            }
+        };
+        reader.readAsText(file);
+    });
+}
+
+function renderMergeFileList() {
+    const container = document.getElementById("merge-file-list");
+    container.innerHTML = "";
+    
+    const fileKeys = Object.keys(uploadedMergeSheets);
+    if (fileKeys.length === 0) {
+        container.innerHTML = '<div class="empty-list-prompt">No files added yet</div>';
+        return;
+    }
+    
+    fileKeys.forEach(key => {
+        const item = document.createElement("div");
+        item.className = "merge-file-item";
+        
+        const nameSpan = document.createElement("span");
+        const displayName = key.includes("::") ? key.split("::")[0] : key;
+        nameSpan.innerHTML = `<i data-lucide="file-code" class="file-icon"></i> ${uploadedMergeSheets[key].problemName} <span class="dimmed-filename">(${displayName})</span>`;
+        item.appendChild(nameSpan);
+        
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-file-delete";
+        delBtn.innerHTML = `<i data-lucide="x" class="btn-icon"></i>`;
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            delete uploadedMergeSheets[key];
+            renderMergeFileList();
+            recalculateMerge();
+        };
+        item.appendChild(delBtn);
+        
+        container.appendChild(item);
+    });
+    lucide.createIcons();
+}
+
+function recalculateMerge() {
+    const fileKeys = Object.keys(uploadedMergeSheets);
+    if (fileKeys.length === 0) {
+        document.getElementById("btn-export-csv-merge").disabled = true;
+        document.getElementById("btn-export-json-merge").disabled = true;
+        document.getElementById("merged-stats-summary").innerText = "Upload graded JSON sheets to merge.";
+        
+        // Reset table headers & body
+        document.getElementById("merged-table-header").innerHTML = `
+            <th>GitHub Username</th>
+            <th>Student Name</th>
+            <th>Total Degree (Avg)</th>
+        `;
+        document.querySelector("#merged-table tbody").innerHTML = `
+            <tr class="empty-row">
+                <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
+            </tr>
+        `;
+        return;
+    }
+    
+    // Dynamically grade raw sheets if we are in raw mode
+    if (mergeMode === 'raw') {
+        const deadlineVal = document.getElementById("merge-deadline") ? document.getElementById("merge-deadline").value : "";
+        fileKeys.forEach(k => {
+            const sheet = uploadedMergeSheets[k];
+            if (sheet.isRaw) {
+                sheet.records = gradeRawSlugSubmissions(sheet.rawData, sheet.slug, deadlineVal, mergeRoster);
+            }
+        });
+    }
+    
+    // Build unique column structures
+    mergeProblemCols = fileKeys.map(k => ({
+        key: k,
+        problemName: uploadedMergeSheets[k].problemName
+    }));
+    mergeProblemNames = mergeProblemCols.map(c => c.problemName);
+    
+    // Case-insensitive union of usernames while preserving original display usernames
+    const usernameMap = new Map(); // lowercase -> display username
+    fileKeys.forEach(k => {
+        uploadedMergeSheets[k].records.forEach(rec => {
+            if (rec.github_username) {
+                const uname = String(rec.github_username).trim();
+                const lower = uname.toLowerCase();
+                if (!usernameMap.has(lower)) {
+                    usernameMap.set(lower, uname);
+                }
+            }
+        });
+    });
+    
+    if (mergeRoster) {
+        Object.keys(mergeRoster).forEach(u => {
+            const uname = String(u).trim();
+            const lower = uname.toLowerCase();
+            if (!usernameMap.has(lower)) {
+                usernameMap.set(lower, uname);
+            }
+        });
+    }
+    
+    const uniqueUsernames = Array.from(usernameMap.values());
+    
+    // Merge grades
+    mergedResults = [];
+    let sortedUsernames;
+    if (mergeRosterOrder && mergeRosterOrder.length > 0) {
+        const lowerRosterOrder = mergeRosterOrder.map(u => u.toLowerCase());
+        sortedUsernames = uniqueUsernames.sort((a, b) => {
+            const idxA = lowerRosterOrder.indexOf(a.toLowerCase());
+            const idxB = lowerRosterOrder.indexOf(b.toLowerCase());
+            
+            if (idxA !== -1 && idxB !== -1) {
+                return idxA - idxB;
+            }
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b, undefined, { sensitivity: 'base' });
+        });
+    } else {
+        sortedUsernames = uniqueUsernames.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+    
+    sortedUsernames.forEach(username => {
+        const lowerUsername = username.toLowerCase();
+        
+        let rosterName = null;
+        if (mergeRoster) {
+            const matchingRosterKey = Object.keys(mergeRoster).find(k => k.toLowerCase() === lowerUsername);
+            if (matchingRosterKey) {
+                rosterName = mergeRoster[matchingRosterKey];
+            }
+        }
+        
+        const record = {
+            github_username: username,
+            name: rosterName
+        };
+        
+        let sumGrades = 0;
+        
+        mergeProblemCols.forEach(col => {
+            const sheet = uploadedMergeSheets[col.key];
+            const studentRec = sheet.records.find(r => r.github_username && r.github_username.toLowerCase() === lowerUsername);
+            const rawGrade = studentRec ? studentRec.grade : 0;
+            const grade = Math.max(0, Math.min(5, Number(rawGrade) || 0));
+            
+            record[col.key] = grade;
+            sumGrades += grade;
+            
+            if (!record.name && studentRec && studentRec.name) {
+                record.name = studentRec.name;
+            }
+        });
+        
+        const n = fileKeys.length;
+        const total_degree = n > 0 ? Math.round((sumGrades / n) + Number.EPSILON) : 0;
+        record.total_degree = Math.max(0, Math.min(5, total_degree));
+        
+        mergedResults.push(record);
+    });
+
+    
+    // Update Stats text
+    document.getElementById("merged-stats-summary").innerText = `Merged ${fileKeys.length} tasks for ${mergedResults.length} distinct students.`;
+    
+    // Enable Exports
+    document.getElementById("btn-export-csv-merge").disabled = false;
+    document.getElementById("btn-export-json-merge").disabled = false;
+    
+    renderMergeTable();
+    extractDayFromSlugs();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GRADEBOOK INTEGRATION HELPERS
+// ─────────────────────────────────────────────────────────────────
+
+let mergeSheetType = 'lab';
+
+window.setMergeSheetType = function(type) {
+    mergeSheetType = type;
+    const btnLab = document.getElementById("btn-type-lab");
+    const btnLec = document.getElementById("btn-type-lec");
+    if (btnLab && btnLec) {
+        btnLab.classList.toggle("active", type === 'lab');
+        btnLec.classList.toggle("active", type === 'lec');
+    }
+    updateExportFilenamePreview();
+};
+
+window.updateExportFilenamePreview = function() {
+    const courseInput = document.getElementById("merge-course-id");
+    let courseId = courseInput ? courseInput.value.trim() : "";
+    if (courseInput) {
+        localStorage.setItem("preferred_course_id", courseId);
+    }
+    if (!courseId) courseId = "Alexandria_August_2026";
+
+    const dayInput = document.getElementById("merge-day-num");
+    let dayNum = dayInput ? dayInput.value.trim() : "";
+    if (!dayNum) dayNum = "1";
+
+    const type = mergeSheetType || "lab";
+    const filename = `${courseId}-merged_day-${dayNum}-${type}-sheet`;
+
+    const previewEl = document.getElementById("export-filename-preview");
+    if (previewEl) {
+        previewEl.innerText = `${filename}.json`;
+    }
+    return filename;
+};
+
+function extractDayFromSlugs() {
+    let detectedDay = null;
+    const keys = Object.keys(uploadedMergeSheets);
+    for (const key of keys) {
+        const sheet = uploadedMergeSheets[key];
+        const textToSearch = sheet.slug || sheet.fileName || sheet.problemName || key;
+
+        // Matches lec/10/..., lab/3/..., 10/csv-reader, day-10, Day 10, d10, 10/...
+        const match = textToSearch.match(/(?:lec|lab|day|d)[\/\-_]?\s*(\d+)/i) || textToSearch.match(/^(\d+)[\/\-_]/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (detectedDay === null) {
+                detectedDay = num;
+            } else if (detectedDay !== num) {
+                detectedDay = null;
+                break;
+            }
+        }
+    }
+
+    if (detectedDay !== null) {
+        const dayInput = document.getElementById("merge-day-num");
+        if (dayInput && !dayInput.value) {
+            dayInput.value = detectedDay;
+        }
+    }
+    updateExportFilenamePreview();
+}
+
+window.toggleOptionalAccordion = function() {
+    const content = document.getElementById("optional-accordion-content");
+    const icon = document.getElementById("optional-accordion-icon");
+    if (content && icon) {
+        const isHidden = content.classList.toggle("hidden");
+        icon.style.transform = isHidden ? "rotate(0deg)" : "rotate(180deg)";
+    }
+};
+
+
+function renderMergeTable() {
+    const headerRow = document.getElementById("merged-table-header");
+    headerRow.innerHTML = "<th>GitHub Username</th><th>Student Name</th>";
+    
+    // Add columns for problems
+    mergeProblemCols.forEach(col => {
+        const th = document.createElement("th");
+        th.innerText = col.problemName;
+        headerRow.appendChild(th);
+    });
+    
+    // Add final average degree column
+    const thTotal = document.createElement("th");
+    thTotal.innerText = "Total Degree (Avg)";
+    headerRow.appendChild(thTotal);
+    
+    // Populate Body
+    const tbody = document.querySelector("#merged-table tbody");
+    tbody.innerHTML = "";
+    
+    if (mergedResults.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-row">
+                <td colspan="${mergeProblemCols.length + 3}">No merge records computed.</td>
+            </tr>
+        `;
+        return;
+    }
+    
+    mergedResults.forEach(rec => {
+        const tr = document.createElement("tr");
+        
+        // Username
+        const tdUser = document.createElement("td");
+        tdUser.className = "github-username-cell";
+        tdUser.innerText = rec.github_username;
+        tr.appendChild(tdUser);
+        
+        // Real Name
+        const tdName = document.createElement("td");
+        tdName.className = "real-name-cell";
+        tdName.innerText = rec.name || "-";
+        tr.appendChild(tdName);
+        
+        // Problem grades using unique col.key
+        mergeProblemCols.forEach(col => {
+            const tdProb = document.createElement("td");
+            const grade = rec[col.key] || 0;
+            const badge = document.createElement("span");
+            badge.className = `grade-badge grade-${grade}`;
+            badge.innerText = grade;
+            tdProb.appendChild(badge);
+            tr.appendChild(tdProb);
+        });
+        
+        // Total average
+        const tdTotal = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = `grade-badge grade-${rec.total_degree}`;
+        badge.innerText = rec.total_degree;
+        tdTotal.appendChild(badge);
+        tr.appendChild(tdTotal);
+        
+        tbody.appendChild(tr);
+    });
+}
+
+window.filterMergeTable = function() {
+    const query = document.getElementById("merge-search").value.toLowerCase();
+    const clearBtn = document.getElementById("merge-search-clear");
+    if (query) {
+        clearBtn.classList.remove("hidden");
+    } else {
+        clearBtn.classList.add("hidden");
+    }
+    
+    const rows = document.querySelectorAll("#merged-table tbody tr");
+    
+    rows.forEach(row => {
+        if (row.classList.contains("empty-row")) return;
+        const text = row.innerText.toLowerCase();
+        if (text.includes(query)) {
+            row.classList.remove("hidden");
+        } else {
+            row.classList.add("hidden");
+        }
+    });
+};
+
+window.exportMerged = function(format) {
+    if (mergedResults.length === 0) return;
+    
+    const baseName = updateExportFilenamePreview();
+    const filename = `${baseName}.${format}`;
+    let content = "";
+    let mimeType = "";
+    
+    if (format === 'json') {
+        const totalCounts = {};
+        mergeProblemCols.forEach(c => totalCounts[c.problemName] = (totalCounts[c.problemName] || 0) + 1);
+        const nameTrackers = {};
+        const finalColKeys = mergeProblemCols.map(col => {
+            const name = col.problemName;
+            nameTrackers[name] = (nameTrackers[name] || 0) + 1;
+            const exportName = totalCounts[name] > 1 ? `${name} #${nameTrackers[name]}` : name;
+            return { key: col.key, exportName };
+        });
+
+        const exportRecords = mergedResults.map(rec => {
+            const cleanRec = {
+                github_username: rec.github_username,
+                name: rec.name
+            };
+            finalColKeys.forEach(colInfo => {
+                cleanRec[colInfo.exportName] = rec[colInfo.key] !== undefined ? rec[colInfo.key] : 0;
+            });
+            cleanRec.total_degree = rec.total_degree;
+            return cleanRec;
+        });
+        content = JSON.stringify(exportRecords, null, 2);
+        mimeType = "application/json";
+
+    } else {
+        // CSV
+        const headers = ["github_username", "name"].concat(mergeProblemCols.map(c => c.problemName)).concat(["total_degree"]);
+        const rows = [headers.join(",")];
+        
+        mergedResults.forEach(rec => {
+            const line = ["github_username", "name"].map(k => rec[k])
+                .concat(mergeProblemCols.map(col => rec[col.key] || 0))
+                .concat([rec.total_degree])
+                .map(val => {
+                    if (val === null || val === undefined) val = "";
+                    val = String(val).replace(/"/g, '""');
+                    if (val.includes(",") || val.includes("\n") || val.includes('"')) {
+                        val = `"${val}"`;
+                    }
+                    return val;
+                });
+            rows.push(line.join(","));
+        });
+        content = rows.join("\n");
+        mimeType = "text/csv";
+    }
+    
+    triggerDownload(content, filename, mimeType);
+};
+
+
+
+// ----------------------------------------------------
+// THEME HANDLING (LIGHT / DARK TOGGLE)
+// ----------------------------------------------------
+
+function initTheme() {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    const btn = document.getElementById("theme-toggle");
+    
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        if (btn) btn.innerHTML = '<i data-lucide="sun" class="btn-icon"></i> Light Mode';
+    } else {
+        document.body.classList.remove("dark-theme");
+        if (btn) btn.innerHTML = '<i data-lucide="moon" class="btn-icon"></i> Dark Mode';
+    }
+    lucide.createIcons();
+}
+
+window.toggleTheme = function() {
+    const btn = document.getElementById("theme-toggle");
+    if (document.body.classList.contains("dark-theme")) {
+        document.body.classList.remove("dark-theme");
+        localStorage.setItem("theme", "light");
+        if (btn) btn.innerHTML = '<i data-lucide="moon" class="btn-icon"></i> Dark Mode';
+    } else {
+        document.body.classList.add("dark-theme");
+        localStorage.setItem("theme", "dark");
+        if (btn) btn.innerHTML = '<i data-lucide="sun" class="btn-icon"></i> Light Mode';
+    }
+    lucide.createIcons();
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        monthNames,
+        parseSubmissionTimestamp,
+        gradeRawSlugSubmissions
+    };
+}
+
+

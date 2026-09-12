@@ -7,7 +7,7 @@ on:
     branches: [ main, dev ]
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install & Run Test Suite
         run: npm test
@@ -36,45 +36,28 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload Staging Artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy Staging to gh-pages/staging
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: './docs'
-
-      - name: Deploy to GitHub Pages Staging
-        id: deployment
-        uses: actions/deploy-pages@v4
+          folder: docs
+          target-folder: staging
+          branch: gh-pages
 
   deploy-production:
     name: 🌟 Deploy Live Production (main branch)
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload Production Artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy Production to gh-pages root
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: './docs'
-
-      - name: Deploy to GitHub Pages Production
-        id: deployment
-        uses: actions/deploy-pages@v4
+          folder: docs
+          branch: gh-pages

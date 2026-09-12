@@ -1,0 +1,11 @@
+{
+  "name": "gradingtool",
+  "version": "5.2.0",
+  "description": "ITI CS50 Grade Processor & Merge Tool",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [],
+  "author": "ITI Technical Team",
+  "license": "ISC"
+}

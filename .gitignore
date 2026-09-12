@@ -1,3 +1,6 @@
 __pycache__/
 *.csv
 *.json
+!package.json
+!test/fixtures/*.json
+

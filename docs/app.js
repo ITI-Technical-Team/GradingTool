@@ -21,27 +21,35 @@ const monthNames = {
     Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
 };
 
-// Initialize
-document.addEventListener("DOMContentLoaded", () => {
-    // Setup file dropzones
-    setupDropzone("grade-dropzone", "grade-file-input", handleGradeFile);
-    setupDropzone("merge-dropzone", "merge-file-input", handleMergeFiles);
-    
-    // Add real-time clock update (Cairo time helper)
-    updateSystemTime();
-    setInterval(updateSystemTime, 60000);
-    
-    // Load saved theme preference
-    initTheme();
+// Environment Guard for Node.js test runner vs Browser
+if (typeof global !== 'undefined' && typeof window === 'undefined') {
+    global.window = global;
+}
 
-    // Restore saved Course ID for Gradebook integration
-    const savedCourse = localStorage.getItem("preferred_course_id") || "";
-    const courseInput = document.getElementById("merge-course-id");
-    if (savedCourse && courseInput) {
-        courseInput.value = savedCourse;
-    }
-    updateExportFilenamePreview();
-});
+// Initialize
+if (typeof document !== 'undefined') {
+    document.addEventListener("DOMContentLoaded", () => {
+        // Setup file dropzones
+        setupDropzone("grade-dropzone", "grade-file-input", handleGradeFile);
+        setupDropzone("merge-dropzone", "merge-file-input", handleMergeFiles);
+        
+        // Add real-time clock update (Cairo time helper)
+        updateSystemTime();
+        setInterval(updateSystemTime, 60000);
+        
+        // Load saved theme preference
+        initTheme();
+
+        // Restore saved Course ID for Gradebook integration
+        const savedCourse = localStorage.getItem("preferred_course_id") || "";
+        const courseInput = document.getElementById("merge-course-id");
+        if (savedCourse && courseInput) {
+            courseInput.value = savedCourse;
+        }
+        updateExportFilenamePreview();
+    });
+}
+
 
 
 // System Time Helper
@@ -1376,4 +1384,13 @@ window.toggleTheme = function() {
     }
     lucide.createIcons();
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        monthNames,
+        parseSubmissionTimestamp,
+        gradeRawSlugSubmissions
+    };
+}
+
 

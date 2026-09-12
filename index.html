@@ -135,7 +135,26 @@
                                 <input type="file" id="grade-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'grade')">
                                 <span class="mini-upload-btn" id="grade-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File (CSV / TXT)</span>
                             </div>
+                            <div class="roster-options-container">
+                                <label class="toggle-row">
+                                    <input type="checkbox" id="grade-strict-roster" checked onchange="recalculateGrade()">
+                                    <span class="toggle-row-text">
+                                        <span class="toggle-row-label">Strict Roster Only</span>
+                                        <span class="toggle-row-desc">Exclude submissions from non-roster students</span>
+                                    </span>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                                <label class="toggle-row">
+                                    <input type="checkbox" id="grade-preserve-empty-rows" checked onchange="recalculateGrade()">
+                                    <span class="toggle-row-text">
+                                        <span class="toggle-row-label">Preserve Blank Rows</span>
+                                        <span class="toggle-row-desc">Keep empty roster lines for 1-to-1 Excel alignment</span>
+                                    </span>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                            </div>
                         </div>
+
 
                         <div class="action-buttons-stack">
                             <button class="btn btn-primary" id="btn-export-json-grade" onclick="exportGraded('json')" disabled>
@@ -298,7 +317,26 @@
                                         <input type="file" id="merge-roster-input" accept=".csv,.txt" class="mini-file-input" onchange="loadRosterFile(this, 'merge')">
                                         <span class="mini-upload-btn" id="merge-roster-status"><i data-lucide="file-spreadsheet" class="btn-icon"></i> Choose Roster File</span>
                                     </div>
+                                    <div class="roster-options-container">
+                                        <label class="toggle-row">
+                                            <input type="checkbox" id="merge-strict-roster" checked onchange="recalculateMerge()">
+                                            <span class="toggle-row-text">
+                                                <span class="toggle-row-label">Strict Roster Only</span>
+                                                <span class="toggle-row-desc">Exclude submissions from non-roster students</span>
+                                            </span>
+                                            <span class="toggle-switch"></span>
+                                        </label>
+                                        <label class="toggle-row">
+                                            <input type="checkbox" id="merge-preserve-empty-rows" checked onchange="recalculateMerge()">
+                                            <span class="toggle-row-text">
+                                                <span class="toggle-row-label">Preserve Blank Rows</span>
+                                                <span class="toggle-row-desc">Keep empty roster lines for 1-to-1 Excel alignment</span>
+                                            </span>
+                                            <span class="toggle-switch"></span>
+                                        </label>
+                                    </div>
                                 </div>
+
 
                                 <!-- Dynamic settings shown in Raw Mode -->
                                 <div id="merge-raw-settings" class="hidden-settings">

@@ -46,6 +46,7 @@ jobs:
           folder: docs
           target-folder: staging
           branch: gh-pages
+          clean: false
 
   deploy-production:
     name: 🌟 Deploy Live Production (main branch)
@@ -61,3 +62,4 @@ jobs:
         with:
           folder: docs
           branch: gh-pages
+          clean: false

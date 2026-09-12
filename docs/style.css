@@ -56,6 +56,11 @@ html {
     --badge-0-color: #971e22;
     --badge-0-bg: rgba(151, 30, 34, 0.08);
     --badge-0-border: rgba(151, 30, 34, 0.2);
+
+    --th-bg: hsl(220, 15%, 93%);
+    --th-bg-hover: hsl(220, 15%, 88%);
+    --table-sticky-bg: #ffffff;
+    --table-sticky-hover-bg: #f8fafc;
     
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -108,6 +113,11 @@ html {
     --badge-0-color: hsl(355, 50%, 75%);
     --badge-0-bg: rgba(355, 50%, 50%, 0.12);
     --badge-0-border: rgba(355, 50%, 50%, 0.25);
+
+    --th-bg: #0f172a;
+    --th-bg-hover: #1e293b;
+    --table-sticky-bg: #0f172a;
+    --table-sticky-hover-bg: #1e293b;
 }
 
 body, input, select, textarea, button, table, th, td {
@@ -1096,7 +1106,7 @@ table {
 }
 
 th {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: var(--th-bg);
     color: var(--color-text-muted);
     font-weight: 600;
     padding: 0.75rem 1rem;
@@ -1110,7 +1120,7 @@ th {
 
 th:hover {
     color: var(--color-text);
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: var(--th-bg-hover);
 }
 
 /* Explicit column widths for grade-table to prevent layout shifting on filter */
@@ -1136,6 +1146,7 @@ th:hover {
 
 #merged-table th {
     text-align: center;
+    background-color: var(--th-bg);
 }
 #merged-table th:first-child,
 #merged-table th:nth-child(2) {
@@ -1143,45 +1154,60 @@ th:hover {
 }
 
 /* Sticky First Column (GitHub Username) */
-#merged-table th:first-child,
+#merged-table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 6;
+    min-width: 140px;
+    background-color: var(--th-bg);
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.08);
+}
+.dark-theme #merged-table th:first-child {
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4);
+}
+
 #merged-table td:first-child {
     position: sticky;
     left: 0;
     z-index: 5;
     min-width: 140px;
-    background-color: #ffffff;
+    background-color: var(--table-sticky-bg);
     box-shadow: 3px 0 8px rgba(0, 0, 0, 0.08);
 }
-.dark-theme #merged-table th:first-child,
 .dark-theme #merged-table td:first-child {
-    background-color: #0f172a;
     box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Sticky Last Column (Total Degree) */
-#merged-table th:last-child,
+#merged-table th:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 6;
+    min-width: 150px;
+    text-align: center;
+    background-color: var(--th-bg);
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+}
+.dark-theme #merged-table th:last-child {
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.4);
+}
+
 #merged-table td:last-child {
     position: sticky;
     right: 0;
     z-index: 5;
     min-width: 150px;
     text-align: center;
-    background-color: #ffffff;
+    background-color: var(--table-sticky-bg);
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
 }
-.dark-theme #merged-table th:last-child,
 .dark-theme #merged-table td:last-child {
-    background-color: #0f172a;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.4);
 }
 
 tr:hover td:first-child,
 tr:hover td:last-child {
-    background-color: #f8fafc;
-}
-.dark-theme tr:hover td:first-child,
-.dark-theme tr:hover td:last-child {
-    background-color: #1e293b;
+    background-color: var(--table-sticky-hover-bg);
 }
 
 

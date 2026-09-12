@@ -42,46 +42,55 @@ test('gradeRawSlugSubmissions - computes grade from checks_passed / checks_run a
     assert.equal(johnRec.grade, 4); // 4/5 * 5 = 4
 });
 
-test('gradeRawSlugSubmissions - union of usernames when student misses a task', () => {
-    const roster = {
-        'mazen_user': 'Mazen Ahmed',
-        'john_doe': 'John Doe',
-        'absent_student': 'Absent Student'
-    };
+test('gradeRawSlugSubmissions - strict roster filtering excludes non-roster submissions', () => {
+    const roster = { 'mazen_user': 'Mazen Ahmed' };
+    const rosterDetails = [
+        { id: 'mazen_user', username: 'mazen_user', name: 'Mazen Ahmed', isBlank: false }
+    ];
     
     const rawDict = {
         'me/cs50/problems/2026/x/hello': [
-            { github_username: 'mazen_user', timestamp: 'Wed, 22 Jul 2026 02:22:20PM EEST', checks_passed: 10, checks_run: 10 }
+            { github_username: 'mazen_user', timestamp: 'Wed, 22 Jul 2026 02:22:20PM EEST', checks_passed: 10, checks_run: 10 },
+            { github_username: 'extra_unregistered_student', timestamp: 'Wed, 22 Jul 2026 02:25:00PM EEST', checks_passed: 10, checks_run: 10 }
         ]
     };
     
-    const results = gradeRawSlugSubmissions(rawDict, 'me/cs50/problems/2026/x/hello', null, roster);
-    
-    // Union should contain all 3 students from roster + submissions
-    assert.equal(results.length, 3);
-    
-    const absentRec = results.find(r => r.github_username === 'absent_student');
-    assert.ok(absentRec);
-    assert.equal(absentRec.grade, 0); // Default 0 for non-submission
+    // Strict Roster Enabled (Default)
+    const strictResults = gradeRawSlugSubmissions(rawDict, 'me/cs50/problems/2026/x/hello', null, roster, rosterDetails, true, true);
+    assert.equal(strictResults.length, 1);
+    assert.equal(strictResults[0].github_username, 'mazen_user');
+
+    // Strict Roster Disabled
+    const nonStrictResults = gradeRawSlugSubmissions(rawDict, 'me/cs50/problems/2026/x/hello', null, roster, rosterDetails, false, true);
+    assert.equal(nonStrictResults.length, 2);
+    assert.equal(nonStrictResults[1].github_username, 'extra_unregistered_student');
 });
 
-test('gradeRawSlugSubmissions - filters out submissions submitted after deadline', () => {
+test('gradeRawSlugSubmissions - preserves blank roster rows for 1-to-1 Excel alignment', () => {
+    const rosterDetails = [
+        { id: 'student_1', username: 'student_1', name: 'Student One', isBlank: false },
+        { id: '__blank_row_2', username: '', name: 'Student Two (No Username)', isBlank: true },
+        { id: 'student_3', username: 'student_3', name: 'Student Three', isBlank: false }
+    ];
+    
     const rawDict = {
         'me/cs50/problems/2026/x/hello': [
-            { github_username: 'on_time_student', timestamp: 'Wed, 22 Jul 2026 01:00:00PM EEST', checks_passed: 10, checks_run: 10 },
-            { github_username: 'late_student', timestamp: 'Thu, 23 Jul 2026 01:00:00PM EEST', checks_passed: 10, checks_run: 10 }
+            { github_username: 'student_1', timestamp: 'Wed, 22 Jul 2026 02:22:20PM EEST', checks_passed: 10, checks_run: 10 },
+            { github_username: 'student_3', timestamp: 'Wed, 22 Jul 2026 02:22:20PM EEST', checks_passed: 10, checks_run: 10 }
         ]
     };
     
-    // Deadline: Jul 22, 2026, 23:59
-    const deadlineStr = '2026-07-22T23:59';
-    const results = gradeRawSlugSubmissions(rawDict, 'me/cs50/problems/2026/x/hello', deadlineStr, null);
+    const results = gradeRawSlugSubmissions(rawDict, 'me/cs50/problems/2026/x/hello', null, null, rosterDetails, true, true);
     
-    const onTimeRec = results.find(r => r.github_username === 'on_time_student');
-    assert.equal(onTimeRec.grade, 5);
+    assert.equal(results.length, 3);
+    assert.equal(results[0].github_username, 'student_1');
     
-    const lateRec = results.find(r => r.github_username === 'late_student');
-    assert.equal(lateRec.grade, 0); // No valid submission prior to deadline
+    // Row 2 preserved as blank username with 0 grade for exact Excel row alignment
+    assert.equal(results[1].github_username, '');
+    assert.equal(results[1].name, 'Student Two (No Username)');
+    assert.equal(results[1].grade, 0);
+    
+    assert.equal(results[2].github_username, 'student_3');
 });
 
 test('Grade Rounding & EPSILON Precision Math', () => {

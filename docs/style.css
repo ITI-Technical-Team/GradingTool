@@ -2213,15 +2213,40 @@ svg.dropzone-icon {
 
 /* Flagged Cheater Row Styling */
 .row-flagged td {
-    background-color: rgba(239, 68, 68, 0.09) !important;
+    background-color: #fff5f5 !important;
     border-top: 1px solid rgba(239, 68, 68, 0.25) !important;
     border-bottom: 1px solid rgba(239, 68, 68, 0.25) !important;
 }
 .row-flagged:hover td {
-    background-color: rgba(239, 68, 68, 0.16) !important;
+    background-color: #fee2e2 !important;
 }
 .row-flagged td:first-child {
     border-left: 4px solid #ef4444 !important;
+    background-color: #fff5f5 !important;
+}
+.row-flagged td:last-child {
+    background-color: #fff5f5 !important;
+}
+.row-flagged:hover td:first-child,
+.row-flagged:hover td:last-child {
+    background-color: #fee2e2 !important;
+}
+
+.dark-theme .row-flagged td {
+    background-color: #271214 !important;
+    border-top: 1px solid rgba(239, 68, 68, 0.35) !important;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.dark-theme .row-flagged:hover td {
+    background-color: #35161a !important;
+}
+.dark-theme .row-flagged td:first-child,
+.dark-theme .row-flagged td:last-child {
+    background-color: #271214 !important;
+}
+.dark-theme .row-flagged:hover td:first-child,
+.dark-theme .row-flagged:hover td:last-child {
+    background-color: #35161a !important;
 }
 
 /* Flag Action Button */

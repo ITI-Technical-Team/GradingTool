@@ -1508,13 +1508,8 @@ function renderMergeTable() {
             const tdProb = document.createElement("td");
             const grade = flagged ? 0 : (rec[col.key] || 0);
             const badge = document.createElement("span");
-            if (flagged) {
-                badge.className = "badge-cheater";
-                badge.innerText = "0";
-            } else {
-                badge.className = `grade-badge grade-${grade}`;
-                badge.innerText = grade;
-            }
+            badge.className = `grade-badge grade-${grade}`;
+            badge.innerText = grade;
             tdProb.appendChild(badge);
             tr.appendChild(tdProb);
         });

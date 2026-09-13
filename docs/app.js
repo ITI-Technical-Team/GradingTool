@@ -1399,33 +1399,40 @@ window.updateExportFilenamePreview = function() {
     return filename;
 };
 
-function extractDayFromSlugs() {
+function detectDayNumberFromSlugs(slugList) {
+    if (!Array.isArray(slugList) || slugList.length === 0) return null;
     let detectedDay = null;
-    const keys = Object.keys(uploadedMergeSheets);
-    for (const key of keys) {
-        const sheet = uploadedMergeSheets[key];
-        const textToSearch = sheet.slug || sheet.fileName || sheet.problemName || key;
-
-        // Matches lec/10/..., lab/3/..., 10/csv-reader, day-10, Day 10, d10, 10/...
-        const match = textToSearch.match(/(?:lec|lab|day|d)[\/\-_]?\s*(\d+)/i) || textToSearch.match(/^(\d+)[\/\-_]/);
+    for (const textToSearch of slugList) {
+        if (!textToSearch) continue;
+        const match = String(textToSearch).match(/(?:lec|lab|day|d)[\/\-_]?\s*(\d+)/i) || String(textToSearch).match(/^(\d+)[\/\-_]/);
         if (match) {
             const num = parseInt(match[1], 10);
             if (detectedDay === null) {
                 detectedDay = num;
             } else if (detectedDay !== num) {
-                detectedDay = null;
-                break;
+                return null;
             }
         }
     }
+    return detectedDay;
+}
 
+function extractDayFromSlugs() {
+    const keys = Object.keys(uploadedMergeSheets);
+    const slugList = keys.map(k => {
+        const sheet = uploadedMergeSheets[k];
+        return sheet.slug || sheet.fileName || sheet.problemName || k;
+    });
+    const detectedDay = detectDayNumberFromSlugs(slugList);
     if (detectedDay !== null) {
-        const dayInput = document.getElementById("merge-day-num");
+        const dayInput = typeof document !== 'undefined' ? document.getElementById("merge-day-num") : null;
         if (dayInput && !dayInput.value) {
             dayInput.value = detectedDay;
         }
     }
-    updateExportFilenamePreview();
+    if (typeof updateExportFilenamePreview === 'function') {
+        updateExportFilenamePreview();
+    }
 }
 
 window.toggleOptionalAccordion = function() {
@@ -1689,6 +1696,7 @@ if (typeof module !== 'undefined' && module.exports) {
         parseSubmissionTimestamp,
         gradeRawSlugSubmissions,
         parseRosterText,
+        detectDayNumberFromSlugs,
         toggleFlagStudent: window.toggleFlagStudent,
         isStudentFlagged: window.isStudentFlagged,
         clearFlaggedStudents: window.clearFlaggedStudents

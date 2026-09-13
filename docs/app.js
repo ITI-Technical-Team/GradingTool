@@ -1,3 +1,8 @@
+// Environment Guard for Node.js test runner vs Browser
+if (typeof global !== 'undefined' && typeof window === 'undefined') {
+    global.window = global;
+}
+
 // State Variables
 let rawProblemData = null; // Raw parsed JSON from grade file
 let selectedSlug = "";
@@ -18,16 +23,42 @@ let mergedResults = []; // Currently merged results
 let mergeProblemNames = []; // Column names for problems
 let mergeProblemCols = []; // Column metadata with unique keys
 
+// Cheater Flagging (Session-Only Set)
+const flaggedStudents = new Set();
+
+function isStudentFlagged(username) {
+    if (!username) return false;
+    return flaggedStudents.has(String(username).toLowerCase().trim());
+}
+
+window.isStudentFlagged = isStudentFlagged;
+
+window.toggleFlagStudent = function(username) {
+    if (!username) return;
+    const lowerUser = String(username).toLowerCase().trim();
+    if (flaggedStudents.has(lowerUser)) {
+        flaggedStudents.delete(lowerUser);
+    } else {
+        flaggedStudents.add(lowerUser);
+    }
+    if (typeof renderGradeTable === 'function' && gradedResults && gradedResults.length > 0) {
+        renderGradeTable();
+    }
+    if (typeof renderMergeTable === 'function' && mergedResults && mergedResults.length > 0) {
+        renderMergeTable();
+    }
+};
+
+window.clearFlaggedStudents = function() {
+    flaggedStudents.clear();
+    if (typeof renderGradeTable === 'function' && gradedResults && gradedResults.length > 0) renderGradeTable();
+    if (typeof renderMergeTable === 'function' && mergedResults && mergedResults.length > 0) renderMergeTable();
+};
 
 const monthNames = {
     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
     Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
 };
-
-// Environment Guard for Node.js test runner vs Browser
-if (typeof global !== 'undefined' && typeof window === 'undefined') {
-    global.window = global;
-}
 
 // Initialize
 if (typeof document !== 'undefined') {
@@ -358,7 +389,7 @@ function renderGradeTable() {
     if (displayResults.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="7">No results match the current filters.</td>
+                <td colspan="8">No results match the current filters.</td>
             </tr>
         `;
         return;
@@ -366,7 +397,11 @@ function renderGradeTable() {
     
     displayResults.forEach(rec => {
         const tr = document.createElement("tr");
-        if (rec.timestamp === "No submission") {
+        const flagged = isStudentFlagged(rec.github_username);
+
+        if (flagged) {
+            tr.className = "row-flagged";
+        } else if (rec.timestamp === "No submission") {
             tr.className = "row-absent";
         }
         
@@ -402,7 +437,10 @@ function renderGradeTable() {
         // Grade badge
         const tdGrade = document.createElement("td");
         const badge = document.createElement("span");
-        if (rec.timestamp !== "No submission") {
+        if (flagged) {
+            badge.className = "badge-cheater";
+            badge.innerText = "🚩 Cheater (0)";
+        } else if (rec.timestamp !== "No submission") {
             badge.className = `grade-badge grade-${rec.grade}`;
             badge.innerText = rec.grade;
         } else {
@@ -435,9 +473,27 @@ function renderGradeTable() {
             }
         }
         tr.appendChild(tdTime);
+
+        // Actions cell
+        const tdActions = document.createElement("td");
+        const flagBtn = document.createElement("button");
+        flagBtn.className = flagged ? "btn-flag flagged" : "btn-flag";
+        flagBtn.title = flagged ? "Click to unflag student" : "Flag as cheater (gives 0)";
+        flagBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.toggleFlagStudent(rec.github_username);
+        };
+        flagBtn.innerHTML = flagged 
+            ? `<i data-lucide="flag-off" class="btn-icon"></i> Flagged` 
+            : `<i data-lucide="flag" class="btn-icon"></i> Flag`;
+        tdActions.appendChild(flagBtn);
+        tr.appendChild(tdActions);
+
         tbody.appendChild(tr);
     });
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
 }
 
 window.filterGradeTable = function() {
@@ -728,7 +784,13 @@ window.exportGraded = function(format) {
     let mimeType = "";
     
     if (format === 'json') {
-        content = JSON.stringify(gradedResults, null, 2);
+        const exportRecords = gradedResults.map(r => {
+            if (isStudentFlagged(r.github_username)) {
+                return { ...r, grade: 0 };
+            }
+            return r;
+        });
+        content = JSON.stringify(exportRecords, null, 2);
         mimeType = "application/json";
     } else {
         // CSV
@@ -736,8 +798,10 @@ window.exportGraded = function(format) {
         const rows = [headers.join(",")];
         
         gradedResults.forEach(rec => {
+            const flagged = isStudentFlagged(rec.github_username);
             const line = headers.map(key => {
                 let val = rec[key];
+                if (key === 'grade' && flagged) val = 0;
                 if (val === null || val === undefined) val = "";
                 // Escape quotes
                 val = String(val).replace(/"/g, '""');
@@ -1389,6 +1453,11 @@ function renderMergeTable() {
     thTotal.innerText = "Total Degree (Avg)";
     headerRow.appendChild(thTotal);
     
+    // Add Actions column header
+    const thActions = document.createElement("th");
+    thActions.innerText = "Actions";
+    headerRow.appendChild(thActions);
+    
     // Populate Body
     const tbody = document.querySelector("#merged-table tbody");
     tbody.innerHTML = "";
@@ -1396,7 +1465,7 @@ function renderMergeTable() {
     if (mergedResults.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="${mergeProblemCols.length + 3}">No merge records computed.</td>
+                <td colspan="${mergeProblemCols.length + 4}">No merge records computed.</td>
             </tr>
         `;
         return;
@@ -1404,6 +1473,11 @@ function renderMergeTable() {
     
     mergedResults.forEach(rec => {
         const tr = document.createElement("tr");
+        const flagged = isStudentFlagged(rec.github_username);
+        
+        if (flagged) {
+            tr.className = "row-flagged";
+        }
         
         // Username
         const tdUser = document.createElement("td");
@@ -1420,10 +1494,15 @@ function renderMergeTable() {
         // Problem grades using unique col.key
         mergeProblemCols.forEach(col => {
             const tdProb = document.createElement("td");
-            const grade = rec[col.key] || 0;
+            const grade = flagged ? 0 : (rec[col.key] || 0);
             const badge = document.createElement("span");
-            badge.className = `grade-badge grade-${grade}`;
-            badge.innerText = grade;
+            if (flagged) {
+                badge.className = "badge-cheater";
+                badge.innerText = "0";
+            } else {
+                badge.className = `grade-badge grade-${grade}`;
+                badge.innerText = grade;
+            }
             tdProb.appendChild(badge);
             tr.appendChild(tdProb);
         });
@@ -1431,13 +1510,37 @@ function renderMergeTable() {
         // Total average
         const tdTotal = document.createElement("td");
         const badge = document.createElement("span");
-        badge.className = `grade-badge grade-${rec.total_degree}`;
-        badge.innerText = rec.total_degree;
+        const totalDeg = flagged ? 0 : rec.total_degree;
+        if (flagged) {
+            badge.className = "badge-cheater";
+            badge.innerText = "🚩 Cheater (0)";
+        } else {
+            badge.className = `grade-badge grade-${totalDeg}`;
+            badge.innerText = totalDeg;
+        }
         tdTotal.appendChild(badge);
         tr.appendChild(tdTotal);
         
+        // Actions cell
+        const tdActions = document.createElement("td");
+        const flagBtn = document.createElement("button");
+        flagBtn.className = flagged ? "btn-flag flagged" : "btn-flag";
+        flagBtn.title = flagged ? "Click to unflag student" : "Flag as cheater (gives 0)";
+        flagBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.toggleFlagStudent(rec.github_username);
+        };
+        flagBtn.innerHTML = flagged 
+            ? `<i data-lucide="flag-off" class="btn-icon"></i> Flagged` 
+            : `<i data-lucide="flag" class="btn-icon"></i> Flag`;
+        tdActions.appendChild(flagBtn);
+        tr.appendChild(tdActions);
+
         tbody.appendChild(tr);
     });
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
 }
 
 window.filterMergeTable = function() {
@@ -1482,14 +1585,15 @@ window.exportMerged = function(format) {
         });
 
         const exportRecords = mergedResults.map(rec => {
+            const flagged = isStudentFlagged(rec.github_username);
             const cleanRec = {
                 github_username: rec.github_username,
                 name: rec.name
             };
             finalColKeys.forEach(colInfo => {
-                cleanRec[colInfo.exportName] = rec[colInfo.key] !== undefined ? rec[colInfo.key] : 0;
+                cleanRec[colInfo.exportName] = flagged ? 0 : (rec[colInfo.key] !== undefined ? rec[colInfo.key] : 0);
             });
-            cleanRec.total_degree = rec.total_degree;
+            cleanRec.total_degree = flagged ? 0 : rec.total_degree;
             return cleanRec;
         });
         content = JSON.stringify(exportRecords, null, 2);
@@ -1501,9 +1605,10 @@ window.exportMerged = function(format) {
         const rows = [headers.join(",")];
         
         mergedResults.forEach(rec => {
+            const flagged = isStudentFlagged(rec.github_username);
             const line = ["github_username", "name"].map(k => rec[k])
-                .concat(mergeProblemCols.map(col => rec[col.key] || 0))
-                .concat([rec.total_degree])
+                .concat(mergeProblemCols.map(col => flagged ? 0 : (rec[col.key] || 0)))
+                .concat([flagged ? 0 : rec.total_degree])
                 .map(val => {
                     if (val === null || val === undefined) val = "";
                     val = String(val).replace(/"/g, '""');
@@ -1591,7 +1696,10 @@ if (typeof module !== 'undefined' && module.exports) {
         monthNames,
         parseSubmissionTimestamp,
         gradeRawSlugSubmissions,
-        parseRosterText
+        parseRosterText,
+        toggleFlagStudent: window.toggleFlagStudent,
+        isStudentFlagged: window.isStudentFlagged,
+        clearFlaggedStudents: window.clearFlaggedStudents
     };
 }
 

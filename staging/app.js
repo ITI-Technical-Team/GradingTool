@@ -1171,6 +1171,7 @@ function recalculateMerge() {
                 headerRow.innerHTML = `
                     <th>GitHub Username</th>
                     <th>Student Name</th>
+                    <th>Actions</th>
                     <th>Total Degree (Avg)</th>
                 `;
             }
@@ -1178,7 +1179,7 @@ function recalculateMerge() {
             if (tbody) {
                 tbody.innerHTML = `
                     <tr class="empty-row">
-                        <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
+                        <td colspan="4">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
                     </tr>
                 `;
             }
@@ -1439,7 +1440,7 @@ window.toggleOptionalAccordion = function() {
 
 function renderMergeTable() {
     const headerRow = document.getElementById("merged-table-header");
-    headerRow.innerHTML = "<th>GitHub Username</th><th>Student Name</th>";
+    headerRow.innerHTML = "<th>GitHub Username</th><th>Student Name</th><th>Actions</th>";
     
     // Add columns for problems
     mergeProblemCols.forEach(col => {
@@ -1448,15 +1449,10 @@ function renderMergeTable() {
         headerRow.appendChild(th);
     });
     
-    // Add final average degree column
+    // Add final average degree column (ALWAYS LAST)
     const thTotal = document.createElement("th");
     thTotal.innerText = "Total Degree (Avg)";
     headerRow.appendChild(thTotal);
-    
-    // Add Actions column header
-    const thActions = document.createElement("th");
-    thActions.innerText = "Actions";
-    headerRow.appendChild(thActions);
     
     // Populate Body
     const tbody = document.querySelector("#merged-table tbody");
@@ -1491,6 +1487,22 @@ function renderMergeTable() {
         tdName.innerText = rec.name || "-";
         tr.appendChild(tdName);
         
+        // Actions cell (Column 3)
+        const tdActions = document.createElement("td");
+        tdActions.className = "actions-cell";
+        const flagBtn = document.createElement("button");
+        flagBtn.className = flagged ? "btn-flag flagged" : "btn-flag";
+        flagBtn.title = flagged ? "Click to unflag student" : "Flag as cheater (gives 0)";
+        flagBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.toggleFlagStudent(rec.github_username);
+        };
+        flagBtn.innerHTML = flagged 
+            ? `<i data-lucide="flag-off" class="btn-icon"></i> Flagged` 
+            : `<i data-lucide="flag" class="btn-icon"></i> Flag`;
+        tdActions.appendChild(flagBtn);
+        tr.appendChild(tdActions);
+
         // Problem grades using unique col.key
         mergeProblemCols.forEach(col => {
             const tdProb = document.createElement("td");
@@ -1507,7 +1519,7 @@ function renderMergeTable() {
             tr.appendChild(tdProb);
         });
         
-        // Total average
+        // Total average (ALWAYS LAST COLUMN)
         const tdTotal = document.createElement("td");
         const badge = document.createElement("span");
         const totalDeg = flagged ? 0 : rec.total_degree;
@@ -1520,21 +1532,6 @@ function renderMergeTable() {
         }
         tdTotal.appendChild(badge);
         tr.appendChild(tdTotal);
-        
-        // Actions cell
-        const tdActions = document.createElement("td");
-        const flagBtn = document.createElement("button");
-        flagBtn.className = flagged ? "btn-flag flagged" : "btn-flag";
-        flagBtn.title = flagged ? "Click to unflag student" : "Flag as cheater (gives 0)";
-        flagBtn.onclick = (e) => {
-            e.stopPropagation();
-            window.toggleFlagStudent(rec.github_username);
-        };
-        flagBtn.innerHTML = flagged 
-            ? `<i data-lucide="flag-off" class="btn-icon"></i> Flagged` 
-            : `<i data-lucide="flag" class="btn-icon"></i> Flag`;
-        tdActions.appendChild(flagBtn);
-        tr.appendChild(tdActions);
 
         tbody.appendChild(tr);
     });

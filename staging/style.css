@@ -2093,6 +2093,11 @@ svg.dropzone-icon {
     min-width: 120px;
 }
 
+.modal-footer .btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%);
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
 /* Timeline Layout */
 .changelog-timeline {
     display: flex;
@@ -2106,7 +2111,7 @@ svg.dropzone-icon {
     position: absolute;
     top: 10px;
     bottom: 10px;
-    left: 45px;
+    left: 29px;
     width: 2px;
     background-color: var(--border-color);
 }
@@ -2147,6 +2152,12 @@ svg.dropzone-icon {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1rem 1.25rem;
+    transition: var(--transition-smooth);
+}
+
+.timeline-item.current .timeline-content {
+    border-color: rgba(151, 30, 34, 0.4);
+    box-shadow: 0 4px 18px var(--primary-glow);
 }
 
 .timeline-header {
@@ -2169,16 +2180,31 @@ svg.dropzone-icon {
     font-size: 0.75rem;
     color: var(--color-text-muted);
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-latest {
+    background-color: var(--primary);
+    color: #ffffff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.12rem 0.45rem;
+    border-radius: 9999px;
+    letter-spacing: 0.5px;
+    margin-left: 0.45rem;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px var(--primary-glow);
 }
 
 .timeline-features {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.65rem;
     font-size: 0.85rem;
     color: var(--color-text-muted);
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .timeline-features li strong {

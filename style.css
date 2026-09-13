@@ -640,9 +640,13 @@ body {
     background-color: rgba(151, 30, 34, 0.03);
     border: 1px solid rgba(151, 30, 34, 0.2);
     border-radius: 10px;
-    padding: 0.85rem 0.85rem 0.4rem 0.85rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.75rem 0.35rem 0.75rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.gradebook-card-group .settings-group {
+    margin-bottom: 0.55rem;
+    gap: 0.25rem;
 }
 .dark-theme .gradebook-card-group {
     background-color: rgba(99, 102, 241, 0.08);
@@ -654,7 +658,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--primary);
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.45rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -791,13 +795,13 @@ body {
     background-color: var(--bg-hover);
     border: 1px dashed var(--border-color);
     border-radius: 8px;
-    padding: 0.65rem 0.85rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.75rem;
+    padding: 0.45rem 0.65rem;
+    margin-top: 0.3rem;
+    margin-bottom: 0.4rem;
     font-size: 0.78rem;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.15rem;
 }
 
 .filename-preview-card .preview-lbl {
@@ -2211,6 +2215,103 @@ svg.dropzone-icon {
     color: var(--color-text);
 }
 
+/* Flagged Cheater Row Styling */
+.row-flagged td {
+    background-color: #fff5f5 !important;
+    border-top: 1px solid rgba(239, 68, 68, 0.25) !important;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+.row-flagged:hover td {
+    background-color: #fee2e2 !important;
+}
+.row-flagged td:first-child {
+    border-left: 4px solid #ef4444 !important;
+    background-color: #fff5f5 !important;
+}
+.row-flagged td:last-child {
+    background-color: #fff5f5 !important;
+}
+.row-flagged:hover td:first-child,
+.row-flagged:hover td:last-child {
+    background-color: #fee2e2 !important;
+}
 
+.dark-theme .row-flagged td {
+    background-color: #271214 !important;
+    border-top: 1px solid rgba(239, 68, 68, 0.35) !important;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.dark-theme .row-flagged:hover td {
+    background-color: #35161a !important;
+}
+.dark-theme .row-flagged td:first-child,
+.dark-theme .row-flagged td:last-child {
+    background-color: #271214 !important;
+}
+.dark-theme .row-flagged:hover td:first-child,
+.dark-theme .row-flagged:hover td:last-child {
+    background-color: #35161a !important;
+}
 
+/* Flag Action Button */
+.btn-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.06);
+    color: #dc2626;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+.btn-flag:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+.btn-flag.flagged {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #b91c1c;
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
+}
+.btn-flag.flagged:hover {
+    background: #b91c1c;
+    border-color: #991b1b;
+}
 
+/* Badge for Cheater */
+.badge-cheater {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+.dark-theme .badge-cheater {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.5);
+}
+.dark-theme .btn-flag {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.12);
+}
+.dark-theme .btn-flag:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fecaca;
+}
+.dark-theme .btn-flag.flagged {
+    background: #ef4444;
+    color: #ffffff;
+}

@@ -55,7 +55,7 @@
             </div>
             <div class="header-badges">
                 <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light theme"><i data-lucide="moon" class="btn-icon"></i> Dark Mode</button>
-                <button class="badge badge-changelog" onclick="openChangelogModal()" title="View Recent Updates & Changelog"><i data-lucide="sparkles" class="btn-icon"></i> v1.2.0 (What's New)</button>
+                <button class="badge badge-changelog" onclick="openChangelogModal()" title="View Recent Updates & Changelog"><i data-lucide="sparkles" class="btn-icon"></i> v1.3.0 (What's New)</button>
                 <span class="badge badge-secondary" id="system-time">Cairo Time</span>
             </div>
         </header>
@@ -224,11 +224,12 @@
                                         <th onclick="sortGradeTable('grade')">Grade (out of 5) <span class="sort-indicator"></span></th>
                                         <th onclick="sortGradeTable('style50_score')">Style Score <span class="sort-indicator"></span></th>
                                         <th onclick="sortGradeTable('timestamp')">Submission Date <span class="sort-indicator"></span></th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="empty-row">
-                                        <td colspan="7">No submissions processed yet. Please upload a JSON file to get started.</td>
+                                        <td colspan="8">No submissions processed yet. Please upload a JSON file to get started.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -391,12 +392,13 @@
                                     <tr id="merged-table-header">
                                         <th>GitHub Username</th>
                                         <th>Student Name</th>
+                                        <th>Actions</th>
                                         <th>Total Degree (Avg)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="empty-row">
-                                        <td colspan="3">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
+                                        <td colspan="4">No graded sheets loaded yet. Add at least two graded JSON files to compute daily degrees.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -441,7 +443,7 @@
                     <div class="help-section">
                         <h3>3. Release Notes & Version History</h3>
                         <p>Track recent updates, UI improvements, and feature releases in the ITI Grading Tool.</p>
-                        <button class="btn btn-secondary" style="width: auto; margin-top: 0.75rem;" onclick="openChangelogModal()"><i data-lucide="sparkles" class="btn-icon"></i> Open Full Changelog (v1.2.0)</button>
+                        <button class="btn btn-secondary" style="width: auto; margin-top: 0.75rem;" onclick="openChangelogModal()"><i data-lucide="sparkles" class="btn-icon"></i> Open Full Changelog (v1.3.0)</button>
                     </div>
                 </div>
             </section>
@@ -465,7 +467,7 @@
                             <li><a href="#" onclick="switchTab('merge'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="git-merge" class="link-icon"></i> Merge Day Tasks</a></li>
                             <li><a href="#" onclick="switchTab('grade'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="clipboard-check" class="link-icon"></i> Grade Single Problem</a></li>
                             <li><a href="#" onclick="switchTab('help'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="terminal" class="link-icon"></i> CLI Scripts Guide</a></li>
-                            <li><a href="#" onclick="openChangelogModal(); return false;"><i data-lucide="sparkles" class="link-icon"></i> What's New (v1.2.0)</a></li>
+                            <li><a href="#" onclick="openChangelogModal(); return false;"><i data-lucide="sparkles" class="link-icon"></i> What's New (v1.3.0)</a></li>
                         </ul>
                     </div>
 
@@ -502,11 +504,28 @@
             </div>
             <div class="modal-body changelog-timeline">
                 <div class="timeline-item current">
+                    <div class="timeline-badge">v1.3.0</div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <h3>Cheater Flagging & Session-Only Discipline Controls</h3>
+                            <span class="timeline-date">September 2026 <span class="badge-latest">LATEST</span></span>
+                        </div>
+                        <ul class="timeline-features">
+                            <li><strong>🚩 Cheater Flagging:</strong> Search and flag any student directly in table rows with a single click.</li>
+                            <li><strong>🎨 Warning Highlights & Badges:</strong> Flagged rows display a distinct red warning tint, red left indicator bar, and <code>🚩 Cheater (0)</code> badge.</li>
+                            <li><strong>🔢 Zeroed Scores & Export:</strong> Automatically zero out all task scores and total average degrees in UI tables and CSV/Excel exports.</li>
+                            <li><strong>🔒 Session-Only Lifecycle:</strong> In-memory state active for the current grading session, resetting cleanly when new files are loaded.</li>
+                            <li><strong>📌 Sticky Table Layout:</strong> Preserved <code>Total Degree (Avg)</code> as the sticky rightmost column while placing action controls next to student names.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
                     <div class="timeline-badge">v1.2.0</div>
                     <div class="timeline-content">
                         <div class="timeline-header">
                             <h3>Blank Line Preservation & UI Overhaul</h3>
-                            <span class="timeline-date">September 2026 <span class="badge-latest">LATEST</span></span>
+                            <span class="timeline-date">September 2026</span>
                         </div>
                         <ul class="timeline-features">
                             <li><strong>✨ Blank Roster Line Preservation:</strong> TXT & CSV rosters now preserve empty lines for 1-to-1 Excel template alignment.</li>

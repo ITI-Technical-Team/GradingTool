@@ -55,6 +55,7 @@
             </div>
             <div class="header-badges">
                 <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light theme"><i data-lucide="moon" class="btn-icon"></i> Dark Mode</button>
+                <button class="badge badge-changelog" onclick="openChangelogModal()" title="View Recent Updates & Changelog"><i data-lucide="sparkles" class="btn-icon"></i> v5.2.0 (What's New)</button>
                 <span class="badge badge-secondary" id="system-time">Cairo Time</span>
             </div>
         </header>
@@ -436,6 +437,12 @@
                         <h4>Script 2: Merger for a Single Day</h4>
                         <pre><code>python3 merge_day.py ITI_compare_sheet.json ITI_vowels_sheet.json --roster roster.csv --output-prefix ITI_day_3_summary</code></pre>
                     </div>
+
+                    <div class="help-section">
+                        <h3>3. Release Notes & Version History</h3>
+                        <p>Track recent updates, UI improvements, and feature releases in the ITI Grading Tool.</p>
+                        <button class="btn btn-secondary" style="width: auto; margin-top: 0.75rem;" onclick="openChangelogModal()"><i data-lucide="sparkles" class="btn-icon"></i> Open Full Changelog (v5.2.0)</button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -458,6 +465,7 @@
                             <li><a href="#" onclick="switchTab('merge'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="git-merge" class="link-icon"></i> Merge Day Tasks</a></li>
                             <li><a href="#" onclick="switchTab('grade'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="clipboard-check" class="link-icon"></i> Grade Single Problem</a></li>
                             <li><a href="#" onclick="switchTab('help'); window.scrollTo({top:0, behavior:'smooth'}); return false;"><i data-lucide="terminal" class="link-icon"></i> CLI Scripts Guide</a></li>
+                            <li><a href="#" onclick="openChangelogModal(); return false;"><i data-lucide="sparkles" class="link-icon"></i> What's New (v5.2.0)</a></li>
                         </ul>
                     </div>
 
@@ -479,9 +487,72 @@
 
     </div>
 
+    <!-- Changelog Modal -->
+    <div id="changelog-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeChangelogModal()">
+        <div class="modal-card glass-card">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-title-row">
+                        <i data-lucide="sparkles" class="modal-icon"></i>
+                        <h2>What's New in ITI Grading Tool</h2>
+                    </div>
+                    <p class="modal-subtitle">Version history, feature releases, and bug fixes</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeChangelogModal()" aria-label="Close modal">✕</button>
+            </div>
+            <div class="modal-body changelog-timeline">
+                <div class="timeline-item current">
+                    <div class="timeline-badge">v5.2.0</div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <h3>Blank Line Preservation & UI Overhaul</h3>
+                            <span class="timeline-date">September 2026</span>
+                        </div>
+                        <ul class="timeline-features">
+                            <li><strong>✨ Blank Roster Line Preservation:</strong> TXT & CSV rosters now preserve empty lines for 1-to-1 Excel template alignment.</li>
+                            <li><strong>🎨 Crimson Pill Switch Toggles:</strong> Upgraded option checkboxes to responsive, animated crimson toggle switches.</li>
+                            <li><strong>🎯 Unified Dark Theme Headers:</strong> Fixed sticky and non-sticky table header background color consistency.</li>
+                            <li><strong>🧪 Automated Unit Test Suite:</strong> Node.js unit tests covering UTF-8 BOM, timestamps, and grade rounding math.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-badge">v5.1.0</div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <h3>Multi-Day Merge & Gradebook Integration</h3>
+                            <span class="timeline-date">August 2026</span>
+                        </div>
+                        <ul class="timeline-features">
+                            <li><strong>📊 Multi-Day Submission Merge:</strong> Compute daily degrees across multiple raw or graded JSON problem sheets.</li>
+                            <li><strong>🎓 Gradebook Export Naming:</strong> Pre-configured filename exports for ITI course structures (e.g. <code>Alexandria_August_2026-merged_day-1-lab-sheet</code>).</li>
+                            <li><strong>🔍 Live Table Filtering:</strong> Instant search filtering across student names, usernames, and scores.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-badge">v5.0.0</div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <h3>Initial Web Tool Release</h3>
+                            <span class="timeline-date">July 2026</span>
+                        </div>
+                        <ul class="timeline-features">
+                            <li><strong>⚡ Single Problem Grader:</strong> Instant grading of raw CS50 JSON submission exports with half-up rounding.</li>
+                            <li><strong>⏰ Late Penalty Calculation:</strong> Automatic late submission deduction based on custom deadlines & timezones.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeChangelogModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Logic -->
     <script src="app.js?v=3.0"></script>
 </body>
-
-
 </html>

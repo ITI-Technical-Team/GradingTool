@@ -1555,6 +1555,37 @@ window.toggleTheme = function() {
     lucide.createIcons();
 };
 
+// ----------------------------------------------------
+// CHANGELOG MODAL HANDLING
+// ----------------------------------------------------
+
+window.openChangelogModal = function() {
+    const modal = document.getElementById("changelog-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+        }
+    }
+};
+
+window.closeChangelogModal = function() {
+    const modal = document.getElementById("changelog-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        document.body.style.overflow = "";
+    }
+};
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            window.closeChangelogModal();
+        }
+    });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         monthNames,
@@ -1563,5 +1594,6 @@ if (typeof module !== 'undefined' && module.exports) {
         parseRosterText
     };
 }
+
 
 
